@@ -283,6 +283,35 @@ export default function MapView() {
         map.getCanvas().style.cursor = "";
       });
 
+      // Smoke (daily) source starts empty; we'll set its data after we fetch the URL
+      map.addSource("smoke-daily", {
+        type: "geojson",
+        data: { type: "FeatureCollection", features: [] },
+      });
+
+      map.addLayer({
+        id: "smoke-daily-layer",
+        type: "fill",
+        source: "smoke-daily",
+        paint: {
+          "fill-opacity": 0.25,
+          "fill-color": [
+            "match",
+            ["get", "Density"],
+            "Heavy",
+            "#ff6b6b",
+            "Medium",
+            "#ffa94d",
+            "Light",
+            "#ffd43b",
+            "#ffd43b",
+          ],
+        },
+      });
+
+      // hidden by default
+      map.setLayoutProperty("smoke-daily-layer", "visibility", "none");
+
       // Draw initial radius on default center
       drawRadiusAndCenter(DEFAULT_CENTER, radiusMiles);
     });
@@ -380,6 +409,17 @@ export default function MapView() {
       showEpaFacilities ? "visible" : "none"
     );
   }, [epaFacilities, showEpaFacilities]);
+
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !map.isStyleLoaded()) return;
+
+    map.setLayoutProperty(
+      "smoke-daily-layer",
+      "visibility",
+      showSmoke ? "visible" : "none"
+    );
+  }, [showSmoke]);
 
   function drawRadiusAndCenter(centerLngLat: [number, number], miles: number) {
     const map = mapRef.current;
@@ -640,6 +680,11 @@ export default function MapView() {
               checked={showSmoke}
               onChange={(e) => setShowSmoke(e.target.checked)}
             />
+          </div>
+
+          <div className="text-xs opacity-60 px-1">
+            Daily smoke layer<br />
+            Based on NOAA satellite analysis. Updated once per day.
           </div>
 
           {layerError && <div className="text-xs text-red-600">{layerError}</div>}
