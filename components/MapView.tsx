@@ -40,6 +40,16 @@ async function geocode(query: string): Promise<GeocodeFeature[]> {
     center: f.center,
   }));
 }
+import { supabase } from "@/lib/supabaseClient";
+
+type PointItem = {
+  id: string;
+  name: string;
+  status?: string | null;
+  lat: number;
+  lng: number;
+  source?: string | null;
+};
 
 export default function MapView() {
   const mapContainerRef = useRef<HTMLDivElement | null>(null);
@@ -56,6 +66,13 @@ export default function MapView() {
   const [radiusMiles, setRadiusMiles] = useState<(typeof RADIUS_OPTIONS_MILES)[number]>(
     10
   );
+
+  const [showDataCenters, setShowDataCenters] = useState(true);
+  const [showEpaFacilities, setShowEpaFacilities] = useState(false);
+
+  const [dataCenters, setDataCenters] = useState<PointItem[]>([]);
+  const [epaFacilities, setEpaFacilities] = useState<PointItem[]>([]);
+  const [layerError, setLayerError] = useState<string | null>(null);
 
   const center = useMemo<[number, number]>(() => {
     return selectedPlace?.center ?? DEFAULT_CENTER;
@@ -128,6 +145,92 @@ export default function MapView() {
         },
       });
 
+      // Data centers source + layer
+      map.addSource("data-centers", {
+        type: "geojson",
+        data: { type: "FeatureCollection", features: [] },
+      });
+
+      map.addLayer({
+        id: "data-centers-layer",
+        type: "circle",
+        source: "data-centers",
+        paint: {
+          "circle-radius": 6,
+          "circle-stroke-width": 1,
+          "circle-opacity": 0.9,
+        },
+      });
+
+      // EPA facilities source + layer
+      map.addSource("epa-facilities", {
+        type: "geojson",
+        data: { type: "FeatureCollection", features: [] },
+      });
+
+      map.addLayer({
+        id: "epa-facilities-layer",
+        type: "circle",
+        source: "epa-facilities",
+        paint: {
+          "circle-radius": 5,
+          "circle-stroke-width": 1,
+          "circle-opacity": 0.85,
+        },
+      });
+
+      // Start with EPA hidden (toggle controls visibility)
+      map.setLayoutProperty("epa-facilities-layer", "visibility", "none");
+
+      map.on("click", "data-centers-layer", (e) => {
+        const f = e.features?.[0];
+        if (!f) return;
+        const props: any = f.properties ?? {};
+        const coords = (f.geometry as any).coordinates;
+
+        new mapboxgl.Popup()
+          .setLngLat(coords)
+          .setHTML(
+            `<div style="font-size:12px">
+        <div style="font-weight:600">${props.name ?? "Data Center"}</div>
+        <div style="opacity:.8">Status: ${props.status ?? "unknown"}</div>
+        <div style="opacity:.7">Source: ${props.source ?? "—"}</div>
+      </div>`
+          )
+          .addTo(map);
+      });
+
+      map.on("click", "epa-facilities-layer", (e) => {
+        const f = e.features?.[0];
+        if (!f) return;
+        const props: any = f.properties ?? {};
+        const coords = (f.geometry as any).coordinates;
+
+        new mapboxgl.Popup()
+          .setLngLat(coords)
+          .setHTML(
+            `<div style="font-size:12px">
+        <div style="font-weight:600">${props.name ?? "EPA Facility"}</div>
+        <div style="opacity:.7">Source: ${props.source ?? "—"}</div>
+      </div>`
+          )
+          .addTo(map);
+      });
+
+      map.on("mouseenter", "data-centers-layer", () => {
+        map.getCanvas().style.cursor = "pointer";
+      });
+      map.on("mouseleave", "data-centers-layer", () => {
+        map.getCanvas().style.cursor = "";
+      });
+
+      map.on("mouseenter", "epa-facilities-layer", () => {
+        map.getCanvas().style.cursor = "pointer";
+      });
+      map.on("mouseleave", "epa-facilities-layer", () => {
+        map.getCanvas().style.cursor = "";
+      });
+
       // Draw initial radius on default center
       drawRadiusAndCenter(DEFAULT_CENTER, radiusMiles);
     });
@@ -148,6 +251,58 @@ export default function MapView() {
     mapRef.current.easeTo({ center, zoom: Math.max(mapRef.current.getZoom(), 10) });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [center, radiusMiles]);
+
+  useEffect(() => {
+    if (!mapRef.current) return;
+    fetchLayersWithinRadius(center, radiusMiles);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [center, radiusMiles, showDataCenters, showEpaFacilities]);
+
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !map.isStyleLoaded()) return;
+
+    const source = map.getSource("data-centers") as mapboxgl.GeoJSONSource | undefined;
+    if (!source) return;
+
+    source.setData({
+      type: "FeatureCollection",
+      features: dataCenters.map((d) => ({
+        type: "Feature",
+        properties: { id: d.id, name: d.name, status: d.status ?? "unknown", source: d.source ?? "" },
+        geometry: { type: "Point", coordinates: [d.lng, d.lat] },
+      })),
+    } as any);
+
+    map.setLayoutProperty(
+      "data-centers-layer",
+      "visibility",
+      showDataCenters ? "visible" : "none"
+    );
+  }, [dataCenters, showDataCenters]);
+
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !map.isStyleLoaded()) return;
+
+    const source = map.getSource("epa-facilities") as mapboxgl.GeoJSONSource | undefined;
+    if (!source) return;
+
+    source.setData({
+      type: "FeatureCollection",
+      features: epaFacilities.map((d) => ({
+        type: "Feature",
+        properties: { id: d.id, name: d.name, source: d.source ?? "" },
+        geometry: { type: "Point", coordinates: [d.lng, d.lat] },
+      })),
+    } as any);
+
+    map.setLayoutProperty(
+      "epa-facilities-layer",
+      "visibility",
+      showEpaFacilities ? "visible" : "none"
+    );
+  }, [epaFacilities, showEpaFacilities]);
 
   function drawRadiusAndCenter(centerLngLat: [number, number], miles: number) {
     const map = mapRef.current;
@@ -175,6 +330,53 @@ export default function MapView() {
           },
         ],
       } as any);
+    }
+  }
+
+  async function fetchLayersWithinRadius(centerLngLat: [number, number], miles: number) {
+    try {
+      setLayerError(null);
+
+      const lat = centerLngLat[1];
+      const lng = centerLngLat[0];
+
+      // Quick distance filter (bounding box). We'll refine later if needed.
+      const latDelta = miles / 69; // ~69 miles per degree latitude
+      const lngDelta = miles / 54; // rough; acceptable for MVP
+
+      if (showDataCenters) {
+        const { data, error } = await supabase
+          .from("data_centers")
+          .select("id,name,status,lat,lng,source")
+          .gte("lat", lat - latDelta)
+          .lte("lat", lat + latDelta)
+          .gte("lng", lng - lngDelta)
+          .lte("lng", lng + lngDelta)
+          .limit(2000);
+
+        if (error) throw error;
+        setDataCenters((data ?? []) as any);
+      } else {
+        setDataCenters([]);
+      }
+
+      if (showEpaFacilities) {
+        const { data, error } = await supabase
+          .from("epa_facilities")
+          .select("id,name,lat,lng,source")
+          .gte("lat", lat - latDelta)
+          .lte("lat", lat + latDelta)
+          .gte("lng", lng - lngDelta)
+          .lte("lng", lng + lngDelta)
+          .limit(2000);
+
+        if (error) throw error;
+        setEpaFacilities((data ?? []) as any);
+      } else {
+        setEpaFacilities([]);
+      }
+    } catch (e: any) {
+      setLayerError(e?.message ?? "Failed to load map layers");
     }
   }
 
@@ -259,6 +461,34 @@ export default function MapView() {
                 {m} mi
               </button>
             ))}
+          </div>
+        </div>
+
+        <div className="space-y-2">
+          <label className="text-sm font-medium">Layers</label>
+
+          <div className="flex items-center justify-between rounded-lg border border-black/10 px-3 py-2">
+            <div className="text-sm">Data centers</div>
+            <input
+              type="checkbox"
+              checked={showDataCenters}
+              onChange={(e) => setShowDataCenters(e.target.checked)}
+            />
+          </div>
+
+          <div className="flex items-center justify-between rounded-lg border border-black/10 px-3 py-2">
+            <div className="text-sm">EPA facilities</div>
+            <input
+              type="checkbox"
+              checked={showEpaFacilities}
+              onChange={(e) => setShowEpaFacilities(e.target.checked)}
+            />
+          </div>
+
+          {layerError && <div className="text-xs text-red-600">{layerError}</div>}
+
+          <div className="text-xs opacity-70">
+            Loaded: {dataCenters.length} data centers, {epaFacilities.length} EPA facilities
           </div>
         </div>
 
