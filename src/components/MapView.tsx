@@ -367,42 +367,42 @@ export default function MapView() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [center]);
 
+  async function fetchHistory() {
+    const { data: places } = await supabase
+      .from("saved_places")
+      .select("id,label")
+      .eq("label", "Home")
+      .limit(1);
+
+    const home = places?.[0];
+    if (!home) return;
+
+    const now = new Date();
+    const d30 = new Date(now); d30.setDate(now.getDate() - 30);
+    const d7 = new Date(now); d7.setDate(now.getDate() - 7);
+
+    const d30s = d30.toISOString().slice(0, 10);
+    const d7s = d7.toISOString().slice(0, 10);
+    const today = now.toISOString().slice(0, 10);
+
+    const { data } = await supabase
+      .from("daily_conditions")
+      .select("date,smoke_present,us_aqi,temp_max_f")
+      .eq("place_id", home.id)
+      .gte("date", d30s)
+      .lte("date", today)
+      .order("date", { ascending: false });
+
+    const rows = data ?? [];
+    setHistory(rows);
+
+    const smoke30 = rows.filter((r: any) => r.smoke_present).length;
+    const smoke7 = rows.filter((r: any) => r.smoke_present && r.date >= d7s).length;
+    setHistoryStats({ smoke7, smoke30 });
+  }
+
   useEffect(() => {
-    const run = async () => {
-      const { data: places } = await supabase
-        .from("saved_places")
-        .select("id,label")
-        .eq("label", "Home")
-        .limit(1);
-
-      const home = places?.[0];
-      if (!home) return;
-
-      const now = new Date();
-      const d30 = new Date(now); d30.setDate(now.getDate() - 30);
-      const d7 = new Date(now); d7.setDate(now.getDate() - 7);
-
-      const d30s = d30.toISOString().slice(0, 10);
-      const d7s = d7.toISOString().slice(0, 10);
-      const today = now.toISOString().slice(0, 10);
-
-      const { data } = await supabase
-        .from("daily_conditions")
-        .select("date,smoke_present,us_aqi,temp_max_f")
-        .eq("place_id", home.id)
-        .gte("date", d30s)
-        .lte("date", today)
-        .order("date", { ascending: false });
-
-      const rows = data ?? [];
-      setHistory(rows);
-
-      const smoke30 = rows.filter((r: any) => r.smoke_present).length;
-      const smoke7 = rows.filter((r: any) => r.smoke_present && r.date >= d7s).length;
-      setHistoryStats({ smoke7, smoke30 });
-    };
-
-    run();
+    fetchHistory();
   }, []);
 
   useEffect(() => {
@@ -807,7 +807,18 @@ export default function MapView() {
 
         {historyStats && (
           <div className="rounded-lg border border-white/10 bg-white/5 p-3 text-sm space-y-2">
-            <div className="font-medium">Home history</div>
+            <div className="flex items-center justify-between">
+              <div className="font-medium">Home history</div>
+              <button
+                className="text-xs underline opacity-80 hover:opacity-100"
+                onClick={async () => {
+                  await fetch("/api/conditions/daily-log");
+                  await fetchHistory();
+                }}
+              >
+                Refresh
+              </button>
+            </div>
             <div className="opacity-80">Smoke days (7): {historyStats.smoke7}</div>
             <div className="opacity-80">Smoke days (30): {historyStats.smoke30}</div>
 
