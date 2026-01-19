@@ -69,6 +69,7 @@ export default function MapView() {
 
   const [showDataCenters, setShowDataCenters] = useState(true);
   const [showEpaFacilities, setShowEpaFacilities] = useState(false);
+  const [showSmoke, setShowSmoke] = useState(true);
 
   const [dataCenters, setDataCenters] = useState<PointItem[]>([]);
   const [epaFacilities, setEpaFacilities] = useState<PointItem[]>([]);
@@ -84,7 +85,10 @@ export default function MapView() {
 
   const [air, setAir] = useState<{
     pm25: number | null;
-    usAqi: number | null; // if available; otherwise we'll show PM2.5
+    pm10: number | null;
+    usAqi: number | null;
+    aod: number | null;
+    dust: number | null;
   } | null>(null);
 
   const [conditionsError, setConditionsError] = useState<string | null>(null);
@@ -489,7 +493,7 @@ export default function MapView() {
     const url =
       `https://air-quality-api.open-meteo.com/v1/air-quality` +
       `?latitude=${lat}&longitude=${lng}` +
-      `&current=pm2_5,us_aqi` +
+      `&current=pm2_5,pm10,us_aqi,aerosol_optical_depth,dust` +
       `&timezone=auto`;
 
     const res = await fetch(url);
@@ -497,9 +501,31 @@ export default function MapView() {
     const data = await res.json();
 
     const pm25 = data?.current?.pm2_5 ?? null;
+    const pm10 = data?.current?.pm10 ?? null;
     const usAqi = data?.current?.us_aqi ?? null;
+    const aod = data?.current?.aerosol_optical_depth ?? null;
+    const dust = data?.current?.dust ?? null;
 
-    return { pm25, usAqi };
+    return { pm25, pm10, usAqi, aod, dust };
+  }
+
+  function smokeSignal(a: typeof air) {
+    if (!a) return { label: "—", level: "unknown" as const };
+
+    // Conservative, MVP thresholds. We'll refine later.
+    const pm25 = a.pm25 ?? 0;
+    const aod = a.aod ?? 0;
+
+    // If AQI is available, we can use it as a stronger signal too.
+    const aqi = a.usAqi ?? null;
+
+    // Basic heuristic
+    const likely = pm25 >= 25 || aod >= 0.5 || (aqi != null && aqi >= 120);
+    const possible = pm25 >= 15 || aod >= 0.3 || (aqi != null && aqi >= 80);
+
+    if (likely) return { label: "Likely smoky", level: "high" as const };
+    if (possible) return { label: "Possible smoke", level: "medium" as const };
+    return { label: "No smoke signal", level: "low" as const };
   }
 
   // Search with a light debounce
@@ -607,6 +633,15 @@ export default function MapView() {
             />
           </div>
 
+          <div className="flex items-center justify-between rounded-lg border border-white/10 bg-white/5 px-3 py-2">
+            <div className="text-sm">Smoke</div>
+            <input
+              type="checkbox"
+              checked={showSmoke}
+              onChange={(e) => setShowSmoke(e.target.checked)}
+            />
+          </div>
+
           {layerError && <div className="text-xs text-red-600">{layerError}</div>}
 
           <div className="text-xs opacity-70">
@@ -652,6 +687,19 @@ export default function MapView() {
                     {air?.usAqi != null ? `AQI ${Math.round(air.usAqi)}` : air?.pm25 != null ? `PM2.5 ${air.pm25}` : "—"}
                   </div>
                 </div>
+
+                {showSmoke && (
+                  <div className="border-t border-white/10 pt-2 flex items-center justify-between">
+                    <div className="opacity-80">Smoke</div>
+                    <div>{smokeSignal(air).label}</div>
+                  </div>
+                )}
+
+                {showSmoke && air?.pm25 != null && (
+                  <div className="text-xs opacity-60">
+                    Based on PM2.5 and atmospheric aerosol indicators.
+                  </div>
+                )}
 
                 <div className="text-xs opacity-60">
                   (MVP) Air values are estimates; we'll add source links + improved AQI later.
