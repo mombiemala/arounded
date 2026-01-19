@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
-
+import booleanPointInPolygon from "@turf/boolean-point-in-polygon";
+import { point } from "@turf/helpers";
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.SUPABASE_SERVICE_ROLE_KEY!
@@ -10,67 +11,57 @@ function cToF(c: number) {
   return (c * 9) / 5 + 32;
 }
 
-async function getWeatherDailyMax(lat: number, lng: number) {
+async function getWeatherDailyMax(lat: number, lng: number, start: string, end: string) {
   const url =
     `https://api.open-meteo.com/v1/forecast` +
     `?latitude=${lat}&longitude=${lng}` +
     `&daily=temperature_2m_max` +
+    `&start_date=${start}&end_date=${end}` +
     `&temperature_unit=celsius&timezone=auto`;
 
   const res = await fetch(url, { cache: "no-store" });
   if (!res.ok) throw new Error("Weather fetch failed");
-  const data = await res.json();
-  const maxC = data?.daily?.temperature_2m_max?.[0];
-  return maxC != null ? cToF(maxC) : null;
+  return res.json();
 }
 
-async function getAirNow(lat: number, lng: number) {
+async function getAirDaily(lat: number, lng: number, start: string, end: string) {
   const url =
     `https://air-quality-api.open-meteo.com/v1/air-quality` +
     `?latitude=${lat}&longitude=${lng}` +
-    `&current=pm2_5,us_aqi` +
+    `&daily=pm2_5_max,us_aqi_max` +
+    `&start_date=${start}&end_date=${end}` +
     `&timezone=auto`;
 
   const res = await fetch(url, { cache: "no-store" });
   if (!res.ok) throw new Error("Air fetch failed");
-  const data = await res.json();
-  return { pm25: data?.current?.pm2_5 ?? null, usAqi: data?.current?.us_aqi ?? null };
+  return res.json();
 }
 
 async function getSmokePresent(lat: number, lng: number) {
-  // Use your cached daily smoke GeoJSON (public)
-  const u = await fetch(`${process.env.NEXT_PUBLIC_SITE_URL}/api/smoke/latest-url`, {
-    cache: "no-store",
-  });
+  const u = await fetch(
+    `${process.env.NEXT_PUBLIC_SITE_URL}/api/smoke/latest-url`,
+    { cache: "no-store" }
+  );
+
   if (!u.ok) return null;
   const { url } = await u.json();
 
   const geoRes = await fetch(url, { cache: "no-store" });
   if (!geoRes.ok) return null;
+
   const geojson = await geoRes.json();
+  const pt = point([lng, lat]);
 
-  // MVP: bbox intersection (fast). We can upgrade to true point-in-polygon next.
-  const features = geojson?.features ?? [];
-  for (const f of features) {
-    const geom = f?.geometry;
-    if (!geom) continue;
+  for (const f of geojson?.features ?? []) {
+    if (!f?.geometry) continue;
 
-    const coords: number[][] = [];
-    const pushCoords = (arr: any) => {
-      if (typeof arr?.[0] === "number") coords.push(arr as number[]);
-      else if (Array.isArray(arr)) arr.forEach(pushCoords);
-    };
-    pushCoords(geom.coordinates);
-
-    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
-    for (const [x, y] of coords) {
-      if (x < minX) minX = x;
-      if (y < minY) minY = y;
-      if (x > maxX) maxX = x;
-      if (y > maxY) maxY = y;
+    try {
+      if (booleanPointInPolygon(pt, f)) {
+        return true;
+      }
+    } catch {
+      // ignore malformed geometries
     }
-
-    if (lng >= minX && lng <= maxX && lat >= minY && lat <= maxY) return true;
   }
 
   return false;
@@ -84,33 +75,42 @@ export async function GET() {
 
     if (error) throw error;
 
-    const today = new Date().toISOString().slice(0, 10);
+    const today = new Date();
+    const end = today.toISOString().slice(0, 10);
+    const startDate = new Date(today);
+    startDate.setDate(today.getDate() - 30);
+    const start = startDate.toISOString().slice(0, 10);
 
     for (const p of places ?? []) {
-      const [tempMaxF, air, smokePresent] = await Promise.all([
-        getWeatherDailyMax(p.lat, p.lng),
-        getAirNow(p.lat, p.lng),
-        getSmokePresent(p.lat, p.lng),
+      const [w, a] = await Promise.all([
+        getWeatherDailyMax(p.lat, p.lng, start, end),
+        getAirDaily(p.lat, p.lng, start, end),
       ]);
 
-      const { error: upErr } = await supabase
-        .from("daily_conditions")
-        .upsert(
+      const dates: string[] = w?.daily?.time ?? [];
+      const highsC: number[] = w?.daily?.temperature_2m_max ?? [];
+      const pm25max: (number | null)[] = a?.daily?.pm2_5_max ?? [];
+      const aqiMax: (number | null)[] = a?.daily?.us_aqi_max ?? [];
+
+      for (let i = 0; i < dates.length; i++) {
+        const tempMaxF = highsC?.[i] != null ? cToF(highsC[i]) : null;
+
+        // Only fill what’s missing; don’t overwrite today’s logged smoke_present if present
+        await supabase.from("daily_conditions").upsert(
           {
             place_id: p.id,
-            date: today,
+            date: dates[i],
             temp_max_f: tempMaxF,
-            pm25: air.pm25,
-            us_aqi: air.usAqi,
-            smoke_present: smokePresent,
+            pm25: pm25max?.[i] ?? null,
+            us_aqi: aqiMax?.[i] ?? null,
+            smoke_present: null
           },
           { onConflict: "place_id,date" }
         );
-
-      if (upErr) throw upErr;
+      }
     }
 
-    return NextResponse.json({ ok: true, date: today, places: places?.length ?? 0 });
+    return NextResponse.json({ ok: true, start, end, places: places?.length ?? 0 });
   } catch (e: any) {
     return NextResponse.json({ ok: false, error: e.message }, { status: 500 });
   }
