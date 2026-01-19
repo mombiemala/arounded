@@ -90,7 +90,7 @@ export default function MapView() {
 
     const map = new mapboxgl.Map({
       container: mapContainerRef.current,
-      style: "mapbox://styles/mapbox/light-v11",
+      style: "mapbox://styles/mapbox/dark-v11",
       center: DEFAULT_CENTER,
       zoom: DEFAULT_ZOOM,
     });
@@ -157,6 +157,8 @@ export default function MapView() {
         source: "data-centers",
         paint: {
           "circle-radius": 6,
+          "circle-color": "#ff6b6b",
+          "circle-stroke-color": "#000",
           "circle-stroke-width": 1,
           "circle-opacity": 0.9,
         },
@@ -174,6 +176,8 @@ export default function MapView() {
         source: "epa-facilities",
         paint: {
           "circle-radius": 5,
+          "circle-color": "#4dabf7",
+          "circle-stroke-color": "#000",
           "circle-stroke-width": 1,
           "circle-opacity": 0.85,
         },
@@ -188,14 +192,29 @@ export default function MapView() {
         const props: any = f.properties ?? {};
         const coords = (f.geometry as any).coordinates;
 
-        new mapboxgl.Popup()
+        new mapboxgl.Popup({ closeButton: true })
           .setLngLat(coords)
           .setHTML(
-            `<div style="font-size:12px">
-        <div style="font-weight:600">${props.name ?? "Data Center"}</div>
-        <div style="opacity:.8">Status: ${props.status ?? "unknown"}</div>
-        <div style="opacity:.7">Source: ${props.source ?? "—"}</div>
-      </div>`
+            `
+    <div style="
+      font-size:13px;
+      color:#fff;
+      background:#111;
+      padding:8px 10px;
+      border-radius:6px;
+      max-width:220px;
+    ">
+      <div style="font-weight:600; margin-bottom:4px;">
+        ${props.name ?? "Data Center"}
+      </div>
+      <div style="opacity:.85;">
+        Status: ${props.status ?? "unknown"}
+      </div>
+      <div style="opacity:.6; font-size:11px; margin-top:4px;">
+        Source: ${props.source ?? "—"}
+      </div>
+    </div>
+    `
           )
           .addTo(map);
       });
@@ -206,13 +225,26 @@ export default function MapView() {
         const props: any = f.properties ?? {};
         const coords = (f.geometry as any).coordinates;
 
-        new mapboxgl.Popup()
+        new mapboxgl.Popup({ closeButton: true })
           .setLngLat(coords)
           .setHTML(
-            `<div style="font-size:12px">
-        <div style="font-weight:600">${props.name ?? "EPA Facility"}</div>
-        <div style="opacity:.7">Source: ${props.source ?? "—"}</div>
-      </div>`
+            `
+    <div style="
+      font-size:13px;
+      color:#fff;
+      background:#111;
+      padding:8px 10px;
+      border-radius:6px;
+      max-width:220px;
+    ">
+      <div style="font-weight:600; margin-bottom:4px;">
+        ${props.name ?? "EPA Facility"}
+      </div>
+      <div style="opacity:.6; font-size:11px;">
+        Source: ${props.source ?? "—"}
+      </div>
+    </div>
+    `
           )
           .addTo(map);
       });
