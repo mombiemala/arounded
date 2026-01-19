@@ -74,6 +74,22 @@ export default function MapView() {
   const [epaFacilities, setEpaFacilities] = useState<PointItem[]>([]);
   const [layerError, setLayerError] = useState<string | null>(null);
 
+  const [weather, setWeather] = useState<{
+    tempF: number | null;
+    humidity: number | null;
+    windMph: number | null;
+    todayHighF: number | null;
+    todayLowF: number | null;
+  } | null>(null);
+
+  const [air, setAir] = useState<{
+    pm25: number | null;
+    usAqi: number | null; // if available; otherwise we'll show PM2.5
+  } | null>(null);
+
+  const [conditionsError, setConditionsError] = useState<string | null>(null);
+  const [conditionsLoading, setConditionsLoading] = useState(false);
+
   const center = useMemo<[number, number]>(() => {
     return selectedPlace?.center ?? DEFAULT_CENTER;
   }, [selectedPlace]);
@@ -291,6 +307,31 @@ export default function MapView() {
   }, [center, radiusMiles, showDataCenters, showEpaFacilities]);
 
   useEffect(() => {
+    const run = async () => {
+      try {
+        setConditionsLoading(true);
+        setConditionsError(null);
+
+        const lat = center[1];
+        const lng = center[0];
+
+        const [w, a] = await Promise.all([fetchWeather(lat, lng), fetchAirQuality(lat, lng)]);
+        setWeather(w);
+        setAir(a);
+      } catch (e: any) {
+        setConditionsError(e?.message ?? "Failed to load conditions");
+        setWeather(null);
+        setAir(null);
+      } finally {
+        setConditionsLoading(false);
+      }
+    };
+
+    run();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [center]);
+
+  useEffect(() => {
     const map = mapRef.current;
     if (!map || !map.isStyleLoaded()) return;
 
@@ -412,6 +453,55 @@ export default function MapView() {
     }
   }
 
+  function cToF(c: number) {
+    return (c * 9) / 5 + 32;
+  }
+  function msToMph(ms: number) {
+    return ms * 2.236936;
+  }
+
+  async function fetchWeather(lat: number, lng: number) {
+    const url =
+      `https://api.open-meteo.com/v1/forecast` +
+      `?latitude=${lat}&longitude=${lng}` +
+      `&current=temperature_2m,relative_humidity_2m,wind_speed_10m` +
+      `&daily=temperature_2m_max,temperature_2m_min` +
+      `&temperature_unit=celsius&wind_speed_unit=ms` +
+      `&timezone=auto`;
+
+    const res = await fetch(url);
+    if (!res.ok) throw new Error("Weather request failed");
+    const data = await res.json();
+
+    const tempF = data?.current?.temperature_2m != null ? cToF(data.current.temperature_2m) : null;
+    const humidity = data?.current?.relative_humidity_2m ?? null;
+    const windMph = data?.current?.wind_speed_10m != null ? msToMph(data.current.wind_speed_10m) : null;
+
+    const todayHighF =
+      data?.daily?.temperature_2m_max?.[0] != null ? cToF(data.daily.temperature_2m_max[0]) : null;
+    const todayLowF =
+      data?.daily?.temperature_2m_min?.[0] != null ? cToF(data.daily.temperature_2m_min[0]) : null;
+
+    return { tempF, humidity, windMph, todayHighF, todayLowF };
+  }
+
+  async function fetchAirQuality(lat: number, lng: number) {
+    const url =
+      `https://air-quality-api.open-meteo.com/v1/air-quality` +
+      `?latitude=${lat}&longitude=${lng}` +
+      `&current=pm2_5,us_aqi` +
+      `&timezone=auto`;
+
+    const res = await fetch(url);
+    if (!res.ok) throw new Error("Air quality request failed");
+    const data = await res.json();
+
+    const pm25 = data?.current?.pm2_5 ?? null;
+    const usAqi = data?.current?.us_aqi ?? null;
+
+    return { pm25, usAqi };
+  }
+
   // Search with a light debounce
   useEffect(() => {
     if (!query || query.trim().length < 3) {
@@ -521,6 +611,53 @@ export default function MapView() {
 
           <div className="text-xs opacity-70">
             Loaded: {dataCenters.length} data centers, {epaFacilities.length} EPA facilities
+          </div>
+        </div>
+
+        <div className="space-y-2">
+          <label className="text-sm font-medium">Conditions</label>
+
+          <div className="rounded-lg border border-white/10 bg-white/5 p-3 text-sm space-y-2">
+            {conditionsLoading && <div className="opacity-70">Loading conditions…</div>}
+
+            {conditionsError && <div className="text-xs text-red-400">{conditionsError}</div>}
+
+            {!conditionsLoading && !conditionsError && (
+              <>
+                <div className="flex items-center justify-between">
+                  <div className="opacity-80">Temp</div>
+                  <div>
+                    {weather?.tempF != null ? `${Math.round(weather.tempF)}°F` : "—"}
+                    <span className="opacity-60">
+                      {weather?.todayHighF != null && weather?.todayLowF != null
+                        ? `  (H ${Math.round(weather.todayHighF)} / L ${Math.round(weather.todayLowF)})`
+                        : ""}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-between">
+                  <div className="opacity-80">Humidity</div>
+                  <div>{weather?.humidity != null ? `${Math.round(weather.humidity)}%` : "—"}</div>
+                </div>
+
+                <div className="flex items-center justify-between">
+                  <div className="opacity-80">Wind</div>
+                  <div>{weather?.windMph != null ? `${Math.round(weather.windMph)} mph` : "—"}</div>
+                </div>
+
+                <div className="border-t border-white/10 pt-2 flex items-center justify-between">
+                  <div className="opacity-80">Air</div>
+                  <div>
+                    {air?.usAqi != null ? `AQI ${Math.round(air.usAqi)}` : air?.pm25 != null ? `PM2.5 ${air.pm25}` : "—"}
+                  </div>
+                </div>
+
+                <div className="text-xs opacity-60">
+                  (MVP) Air values are estimates; we'll add source links + improved AQI later.
+                </div>
+              </>
+            )}
           </div>
         </div>
 
