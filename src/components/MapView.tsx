@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useMemo, useRef, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import mapboxgl from "mapbox-gl";
 import * as turf from "@turf/turf";
 
@@ -41,6 +42,9 @@ async function geocode(query: string): Promise<GeocodeFeature[]> {
   }));
 }
 import { supabase } from "@/lib/supabaseClient";
+import { createBrowserClient } from "@/lib/supabaseBrowser";
+import { useAuth } from "@/lib/useAuth";
+import Link from "next/link";
 
 type PointItem = {
   id: string;
@@ -52,6 +56,8 @@ type PointItem = {
 };
 
 export default function MapView() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const mapContainerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<mapboxgl.Map | null>(null);
 
@@ -96,10 +102,117 @@ export default function MapView() {
 
   const [history, setHistory] = useState<any[] | null>(null);
   const [historyStats, setHistoryStats] = useState<{ smoke7: number; smoke30: number } | null>(null);
+  const [showLoginPrompt, setShowLoginPrompt] = useState(false);
+  const [savingLocation, setSavingLocation] = useState(false);
+  const [copiedToast, setCopiedToast] = useState(false);
+  const [initializedFromUrl, setInitializedFromUrl] = useState(false);
+
+  const { user } = useAuth();
+  const supabaseClient = createBrowserClient();
+
+  // Read URL params on mount
+  useEffect(() => {
+    if (initializedFromUrl) return;
+
+    const lat = searchParams.get("lat");
+    const lng = searchParams.get("lng");
+    const z = searchParams.get("z");
+    const layers = searchParams.get("layers");
+
+    if (lat && lng) {
+      const parsedLat = parseFloat(lat);
+      const parsedLng = parseFloat(lng);
+      if (!isNaN(parsedLat) && !isNaN(parsedLng)) {
+        setSelectedPlace({
+          id: "url",
+          place_name: `${parsedLat.toFixed(4)}, ${parsedLng.toFixed(4)}`,
+          center: [parsedLng, parsedLat],
+        });
+      }
+    }
+
+    if (z) {
+      const parsedZ = parseFloat(z);
+      if (!isNaN(parsedZ) && mapRef.current) {
+        mapRef.current.setZoom(parsedZ);
+      }
+    }
+
+    if (layers) {
+      const layerList = layers.split(",");
+      setShowDataCenters(layerList.includes("datacenters"));
+      setShowEpaFacilities(layerList.includes("epa"));
+      setShowSmoke(layerList.includes("smoke"));
+    }
+
+    setInitializedFromUrl(true);
+  }, [searchParams, initializedFromUrl]);
 
   const center = useMemo<[number, number]>(() => {
     return selectedPlace?.center ?? DEFAULT_CENTER;
   }, [selectedPlace]);
+
+  // Sync URL params when layer toggles change
+  useEffect(() => {
+    if (!initializedFromUrl || !mapRef.current) return;
+
+    const params = new URLSearchParams(window.location.search);
+    const activeLayers: string[] = [];
+    if (showDataCenters) activeLayers.push("datacenters");
+    if (showEpaFacilities) activeLayers.push("epa");
+    if (showSmoke) activeLayers.push("smoke");
+
+    if (activeLayers.length > 0) {
+      params.set("layers", activeLayers.join(","));
+    } else {
+      params.delete("layers");
+    }
+
+    const newUrl = `${window.location.pathname}?${params.toString()}`;
+    router.replace(newUrl, { scroll: false });
+  }, [showDataCenters, showEpaFacilities, showSmoke, initializedFromUrl, router]);
+
+  // Sync zoom and center to URL when map moves (user interaction)
+  useEffect(() => {
+    if (!mapRef.current || !initializedFromUrl) return;
+
+    const map = mapRef.current;
+    let timeoutId: NodeJS.Timeout;
+
+    const updateUrl = () => {
+      clearTimeout(timeoutId);
+      timeoutId = setTimeout(() => {
+        const params = new URLSearchParams();
+        const center = map.getCenter();
+        const zoom = map.getZoom();
+
+        params.set("lat", center.lat.toFixed(4));
+        params.set("lng", center.lng.toFixed(4));
+        params.set("z", zoom.toFixed(2));
+
+        const activeLayers: string[] = [];
+        if (showDataCenters) activeLayers.push("datacenters");
+        if (showEpaFacilities) activeLayers.push("epa");
+        if (showSmoke) activeLayers.push("smoke");
+
+        if (activeLayers.length > 0) {
+          params.set("layers", activeLayers.join(","));
+        }
+
+        const newUrl = `${window.location.pathname}?${params.toString()}`;
+        router.replace(newUrl, { scroll: false });
+      }, 300);
+    };
+
+    map.on("moveend", updateUrl);
+    map.on("zoomend", updateUrl);
+
+    return () => {
+      clearTimeout(timeoutId);
+      map.off("moveend", updateUrl);
+      map.off("zoomend", updateUrl);
+    };
+  }, [initializedFromUrl, router, showDataCenters, showEpaFacilities, showSmoke]);
 
   // Initialize map once
   useEffect(() => {
@@ -111,11 +224,18 @@ export default function MapView() {
       return;
     }
 
+    const initialCenter = searchParams.get("lat") && searchParams.get("lng")
+      ? [parseFloat(searchParams.get("lng")!), parseFloat(searchParams.get("lat")!)] as [number, number]
+      : DEFAULT_CENTER;
+    const initialZoom = searchParams.get("z")
+      ? parseFloat(searchParams.get("z")!)
+      : DEFAULT_ZOOM;
+
     const map = new mapboxgl.Map({
       container: mapContainerRef.current,
       style: "mapbox://styles/mapbox/dark-v11",
-      center: DEFAULT_CENTER,
-      zoom: DEFAULT_ZOOM,
+      center: initialCenter,
+      zoom: initialZoom,
     });
 
     mapRef.current = map;
@@ -368,7 +488,9 @@ export default function MapView() {
   }, [center]);
 
   async function fetchHistory() {
-    const { data: places } = await supabase
+    if (!user) return;
+
+    const { data: places } = await supabaseClient
       .from("saved_places")
       .select("id,label")
       .eq("label", "Home")
@@ -385,7 +507,7 @@ export default function MapView() {
     const d7s = d7.toISOString().slice(0, 10);
     const today = now.toISOString().slice(0, 10);
 
-    const { data } = await supabase
+    const { data } = await supabaseClient
       .from("daily_conditions")
       .select("date,smoke_present,us_aqi,temp_max_f")
       .eq("place_id", home.id)
@@ -401,9 +523,47 @@ export default function MapView() {
     setHistoryStats({ smoke7, smoke30 });
   }
 
+  async function handleSaveLocation() {
+    if (!user) {
+      setShowLoginPrompt(true);
+      return;
+    }
+
+    if (!selectedPlace) return;
+
+    setSavingLocation(true);
+    try {
+      const { error } = await supabaseClient
+        .from("saved_places")
+        .upsert(
+          {
+            label: "Home",
+            lat: center[1],
+            lng: center[0],
+            name: selectedPlace.place_name,
+          },
+          { onConflict: "label" }
+        );
+
+      if (error) throw error;
+
+      // Refresh history after saving
+      await fetchHistory();
+    } catch (error: any) {
+      console.error("Failed to save location:", error);
+    } finally {
+      setSavingLocation(false);
+    }
+  }
+
   useEffect(() => {
-    fetchHistory();
-  }, []);
+    if (user) {
+      fetchHistory();
+    } else {
+      setHistory(null);
+      setHistoryStats(null);
+    }
+  }, [user]);
 
   useEffect(() => {
     const map = mapRef.current;
@@ -641,7 +801,7 @@ export default function MapView() {
   }
 
   return (
-    <div className="w-full h-[calc(100vh-0px)] flex">
+    <div className="w-full min-h-[calc(100vh-64px)] flex">
       {/* Left panel */}
       <div className="w-full max-w-md border-r border-black/10 p-4 space-y-4">
         <div>
@@ -796,16 +956,64 @@ export default function MapView() {
         </div>
 
         <div className="rounded-lg border border-black/10 p-3 text-sm space-y-1">
-          <div className="font-medium">Current selection</div>
+          <div className="flex items-center justify-between mb-2">
+            <div className="font-medium">Current selection</div>
+            <button
+              onClick={async () => {
+                try {
+                  await navigator.clipboard.writeText(window.location.href);
+                  setCopiedToast(true);
+                  setTimeout(() => setCopiedToast(false), 2000);
+                } catch (err) {
+                  console.error("Failed to copy:", err);
+                }
+              }}
+              className="text-xs px-2 py-1 border border-white/20 rounded hover:border-white/40 transition-colors"
+            >
+              Share
+            </button>
+          </div>
           <div className="opacity-80">
             {selectedPlace ? selectedPlace.place_name : "Default (Leesburg area)"}
           </div>
           <div className="opacity-70">
             Center: {center[1].toFixed(4)}, {center[0].toFixed(4)}
           </div>
+          {selectedPlace && (
+            <button
+              onClick={handleSaveLocation}
+              disabled={savingLocation}
+              className="mt-3 w-full px-3 py-2 text-xs border border-white/20 rounded-lg hover:border-white/40 transition-colors disabled:opacity-50"
+            >
+              {savingLocation ? "Saving..." : "Save location"}
+            </button>
+          )}
         </div>
 
-        {historyStats && (
+        {showLoginPrompt && (
+          <div className="rounded-lg border border-white/20 bg-white/10 p-4 space-y-3">
+            <div className="font-medium text-sm">Sign in to save places</div>
+            <p className="text-xs opacity-80">
+              Create an account to save locations and track historical conditions.
+            </p>
+            <div className="flex gap-2">
+              <Link
+                href="/login"
+                className="flex-1 px-4 py-2 bg-white text-black rounded-lg font-medium hover:bg-white/90 transition-colors text-center text-sm"
+              >
+                Sign in
+              </Link>
+              <button
+                onClick={() => setShowLoginPrompt(false)}
+                className="px-4 py-2 border border-white/20 rounded-lg hover:border-white/40 transition-colors text-sm"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        )}
+
+        {user && historyStats && (
           <div className="rounded-lg border border-white/10 bg-white/5 p-3 text-sm space-y-2">
             <div className="flex items-center justify-between">
               <div className="font-medium">Home history</div>
@@ -840,14 +1048,36 @@ export default function MapView() {
           </div>
         )}
 
+        {!user && (
+          <div className="rounded-lg border border-white/10 bg-white/5 p-3 text-sm">
+            <div className="font-medium mb-2">Home history</div>
+            <p className="text-xs opacity-70 mb-3">
+              Sign in to save places and view historical conditions.
+            </p>
+            <Link
+              href="/login"
+              className="inline-block px-4 py-2 bg-white text-black rounded-lg font-medium hover:bg-white/90 transition-colors text-xs"
+            >
+              Sign in
+            </Link>
+          </div>
+        )}
+
         <div className="text-xs opacity-60">
           Next: data center + EPA facility layers, then AQI/smoke/weather, then timeline.
         </div>
       </div>
 
       {/* Map */}
-      <div className="flex-1">
+      <div className="flex-1 relative">
         <div ref={mapContainerRef} className="w-full h-full" />
+        
+        {/* Copied Toast */}
+        {copiedToast && (
+          <div className="absolute top-4 right-4 bg-white text-black px-4 py-2 rounded-lg shadow-lg text-sm font-medium z-50">
+            Copied!
+          </div>
+        )}
       </div>
     </div>
   );
