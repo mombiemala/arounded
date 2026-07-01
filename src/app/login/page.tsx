@@ -35,10 +35,13 @@ export default function LoginPage() {
         text:
           "Magic link sent. Check your inbox (and spam/promotions). Open it on this device to finish signing in.",
       });
-    } catch (error: any) {
+    } catch (error) {
       setMessage({
         type: "error",
-        text: error?.message || "Couldn’t send the magic link. Try again in a moment.",
+        text:
+          error instanceof Error
+            ? error.message
+            : "Couldn’t send the magic link. Try again in a moment.",
       });
     } finally {
       setLoading(false);
@@ -59,12 +62,13 @@ export default function LoginPage() {
 
       if (error) throw error;
       // Redirect handled by OAuth flow
-    } catch (error: any) {
+    } catch (error) {
       setMessage({
         type: "error",
         text:
-          error?.message ||
-          "Google sign-in isn’t available right now. Use email instead.",
+          error instanceof Error
+            ? error.message
+            : "Google sign-in isn’t available right now. Use email instead.",
       });
       setLoading(false);
     }

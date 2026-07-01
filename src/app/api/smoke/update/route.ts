@@ -36,7 +36,8 @@ export async function GET() {
     if (error) throw error;
 
     return NextResponse.json({ ok: true, features: geojson?.features?.length ?? 0 });
-  } catch (e: any) {
-    return NextResponse.json({ ok: false, error: e.message }, { status: 500 });
+  } catch (e) {
+    const message = e instanceof Error ? e.message : "Unexpected error";
+    return NextResponse.json({ ok: false, error: message }, { status: 500 });
   }
 }

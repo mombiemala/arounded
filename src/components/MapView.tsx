@@ -22,6 +22,44 @@ function milesToKm(miles: number) {
   return miles * 1.609344;
 }
 
+// Escape values before interpolating into popup HTML (defense against markup
+// sneaking in through dataset fields).
+function escapeHtml(value: unknown): string {
+  return String(value ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
+function pointCoords(
+  feature: mapboxgl.GeoJSONFeature
+): [number, number] | null {
+  const geometry = feature.geometry;
+  return geometry.type === "Point"
+    ? (geometry.coordinates as [number, number])
+    : null;
+}
+
+function pointsToFeatureCollection(
+  items: PointItem[]
+): GeoJSON.FeatureCollection<GeoJSON.Point> {
+  return {
+    type: "FeatureCollection",
+    features: items.map((d) => ({
+      type: "Feature",
+      properties: {
+        id: d.id,
+        name: d.name,
+        status: d.status ?? "unknown",
+        source: d.source ?? "",
+      },
+      geometry: { type: "Point", coordinates: [d.lng, d.lat] },
+    })),
+  };
+}
+
 type MapboxV6Feature = {
   id?: string;
   properties?: {
@@ -73,6 +111,13 @@ type PointItem = {
   source?: string | null;
 };
 
+type DailyConditionRow = {
+  date: string;
+  smoke_present: boolean | null;
+  us_aqi: number | null;
+  temp_max_f: number | null;
+};
+
 export default function MapView() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -122,7 +167,7 @@ export default function MapView() {
   const [conditionsError, setConditionsError] = useState<string | null>(null);
   const [conditionsLoading, setConditionsLoading] = useState(false);
 
-  const [history, setHistory] = useState<any[] | null>(null);
+  const [history, setHistory] = useState<DailyConditionRow[] | null>(null);
   const [historyStats, setHistoryStats] = useState<{ smoke7: number; smoke30: number } | null>(null);
   const [showLoginPrompt, setShowLoginPrompt] = useState(false);
   const [savingLocation, setSavingLocation] = useState(false);
@@ -354,8 +399,9 @@ export default function MapView() {
       map.on("click", "data-centers-layer", (e) => {
         const f = e.features?.[0];
         if (!f) return;
-        const props: any = f.properties ?? {};
-        const coords = (f.geometry as any).coordinates;
+        const props = f.properties ?? {};
+        const coords = pointCoords(f);
+        if (!coords) return;
 
         new mapboxgl.Popup({ closeButton: true })
           .setLngLat(coords)
@@ -370,13 +416,13 @@ export default function MapView() {
       max-width:220px;
     ">
       <div style="font-weight:600; margin-bottom:4px;">
-        ${props.name ?? "Data Center"}
+        ${props.name ? escapeHtml(props.name) : "Data Center"}
       </div>
       <div style="opacity:.85;">
-        Status: ${props.status ?? "unknown"}
+        Status: ${props.status ? escapeHtml(props.status) : "unknown"}
       </div>
       <div style="opacity:.6; font-size:11px; margin-top:4px;">
-        Source: ${props.source ?? "—"}
+        Source: ${props.source ? escapeHtml(props.source) : "—"}
       </div>
     </div>
     `
@@ -387,8 +433,9 @@ export default function MapView() {
       map.on("click", "epa-facilities-layer", (e) => {
         const f = e.features?.[0];
         if (!f) return;
-        const props: any = f.properties ?? {};
-        const coords = (f.geometry as any).coordinates;
+        const props = f.properties ?? {};
+        const coords = pointCoords(f);
+        if (!coords) return;
 
         new mapboxgl.Popup({ closeButton: true })
           .setLngLat(coords)
@@ -403,10 +450,10 @@ export default function MapView() {
       max-width:220px;
     ">
       <div style="font-weight:600; margin-bottom:4px;">
-        ${props.name ?? "EPA Facility"}
+        ${props.name ? escapeHtml(props.name) : "EPA Facility"}
       </div>
       <div style="opacity:.6; font-size:11px;">
-        Source: ${props.source ?? "—"}
+        Source: ${props.source ? escapeHtml(props.source) : "—"}
       </div>
     </div>
     `
@@ -460,8 +507,8 @@ export default function MapView() {
       map.on("click", "smoke-daily-layer", (e) => {
         const f = e.features?.[0];
         if (!f) return;
-        const props: any = f.properties ?? {};
-        const density = props.Density ?? "Unknown";
+        const props = f.properties ?? {};
+        const density = props.Density ? escapeHtml(props.Density) : "Unknown";
 
         new mapboxgl.Popup({ closeButton: true })
           .setLngLat(e.lngLat)
@@ -515,7 +562,6 @@ export default function MapView() {
 
     drawRadiusAndCenter(center, radiusMiles);
     mapRef.current.easeTo({ center, zoom: Math.max(mapRef.current.getZoom(), 10) });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [center, radiusMiles]);
 
   useEffect(() => {
@@ -536,8 +582,8 @@ export default function MapView() {
         const [w, a] = await Promise.all([fetchWeather(lat, lng), fetchAirQuality(lat, lng)]);
         setWeather(w);
         setAir(a);
-      } catch (e: any) {
-        setConditionsError(e?.message ?? "Failed to load conditions");
+      } catch (e) {
+        setConditionsError(e instanceof Error ? e.message : "Failed to load conditions");
         setWeather(null);
         setAir(null);
       } finally {
@@ -577,11 +623,11 @@ export default function MapView() {
       .lte("date", today)
       .order("date", { ascending: false });
 
-    const rows = data ?? [];
+    const rows = (data ?? []) as DailyConditionRow[];
     setHistory(rows);
 
-    const smoke30 = rows.filter((r: any) => r.smoke_present).length;
-    const smoke7 = rows.filter((r: any) => r.smoke_present && r.date >= d7s).length;
+    const smoke30 = rows.filter((r) => r.smoke_present).length;
+    const smoke7 = rows.filter((r) => r.smoke_present && r.date >= d7s).length;
     setHistoryStats({ smoke7, smoke30 });
   }
 
@@ -611,7 +657,7 @@ export default function MapView() {
 
       // Refresh history after saving
       await fetchHistory();
-    } catch (error: any) {
+    } catch (error) {
       console.error("Failed to save location:", error);
     } finally {
       setSavingLocation(false);
@@ -625,6 +671,7 @@ export default function MapView() {
       setHistory(null);
       setHistoryStats(null);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
 
   useEffect(() => {
@@ -634,14 +681,7 @@ export default function MapView() {
     const source = map.getSource("data-centers") as mapboxgl.GeoJSONSource | undefined;
     if (!source) return;
 
-    source.setData({
-      type: "FeatureCollection",
-      features: dataCenters.map((d) => ({
-        type: "Feature",
-        properties: { id: d.id, name: d.name, status: d.status ?? "unknown", source: d.source ?? "" },
-        geometry: { type: "Point", coordinates: [d.lng, d.lat] },
-      })),
-    } as any);
+    source.setData(pointsToFeatureCollection(dataCenters));
 
     map.setLayoutProperty(
       "data-centers-layer",
@@ -657,14 +697,7 @@ export default function MapView() {
     const source = map.getSource("epa-facilities") as mapboxgl.GeoJSONSource | undefined;
     if (!source) return;
 
-    source.setData({
-      type: "FeatureCollection",
-      features: epaFacilities.map((d) => ({
-        type: "Feature",
-        properties: { id: d.id, name: d.name, source: d.source ?? "" },
-        geometry: { type: "Point", coordinates: [d.lng, d.lat] },
-      })),
-    } as any);
+    source.setData(pointsToFeatureCollection(epaFacilities));
 
     map.setLayoutProperty(
       "epa-facilities-layer",
@@ -752,12 +785,12 @@ export default function MapView() {
 
     const radiusSource = map.getSource("radius") as mapboxgl.GeoJSONSource | undefined;
     if (radiusSource) {
-      radiusSource.setData(circle as any);
+      radiusSource.setData(circle);
     }
 
     const centerSource = map.getSource("center-point") as mapboxgl.GeoJSONSource | undefined;
     if (centerSource) {
-      centerSource.setData({
+      const centerFc: GeoJSON.FeatureCollection<GeoJSON.Point> = {
         type: "FeatureCollection",
         features: [
           {
@@ -766,7 +799,8 @@ export default function MapView() {
             geometry: { type: "Point", coordinates: centerLngLat },
           },
         ],
-      } as any);
+      };
+      centerSource.setData(centerFc);
     }
   }
 
@@ -792,7 +826,7 @@ export default function MapView() {
           .limit(2000);
 
         if (error) throw error;
-        setDataCenters((data ?? []) as any);
+        setDataCenters((data ?? []) as PointItem[]);
       } else {
         setDataCenters([]);
       }
@@ -808,12 +842,12 @@ export default function MapView() {
           .limit(2000);
 
         if (error) throw error;
-        setEpaFacilities((data ?? []) as any);
+        setEpaFacilities((data ?? []) as PointItem[]);
       } else {
         setEpaFacilities([]);
       }
-    } catch (e: any) {
-      setLayerError(e?.message ?? "Failed to load map layers");
+    } catch (e) {
+      setLayerError(e instanceof Error ? e.message : "Failed to load map layers");
     }
   }
 
@@ -1192,7 +1226,7 @@ export default function MapView() {
             {history && history.length > 0 && (
               <div className="pt-2 border-t border-white/10 space-y-1">
                 <div className="text-xs opacity-60">Last 10 days</div>
-                {history.slice(0, 10).map((r: any) => (
+                {history.slice(0, 10).map((r) => (
                   <div key={r.date} className="flex justify-between text-xs">
                     <div className="opacity-80">{r.date}</div>
                     <div className="opacity-80">
