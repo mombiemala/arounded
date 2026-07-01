@@ -811,9 +811,10 @@ export default function MapView() {
       const lat = centerLngLat[1];
       const lng = centerLngLat[0];
 
-      // Quick distance filter (bounding box). We'll refine later if needed.
-      const latDelta = miles / 69; // ~69 miles per degree latitude
-      const lngDelta = miles / 54; // rough; acceptable for MVP
+      // Bounding-box filter. ~69 miles per degree latitude; longitude degrees
+      // shrink toward the poles, so scale by cos(latitude).
+      const latDelta = miles / 69;
+      const lngDelta = miles / (69 * Math.max(Math.cos((lat * Math.PI) / 180), 0.01));
 
       if (showDataCenters) {
         const { data, error } = await supabase
@@ -832,17 +833,16 @@ export default function MapView() {
       }
 
       if (showEpaFacilities) {
-        const { data, error } = await supabase
-          .from("epa_facilities")
-          .select("id,name,lat,lng,source")
-          .gte("lat", lat - latDelta)
-          .lte("lat", lat + latDelta)
-          .gte("lng", lng - lngDelta)
-          .lte("lng", lng + lngDelta)
-          .limit(2000);
-
-        if (error) throw error;
-        setEpaFacilities((data ?? []) as PointItem[]);
+        // EPA facilities are queried on demand from the FRS proxy route rather
+        // than a stored table (the national dataset is far too large to mirror).
+        const res = await fetch(
+          `/api/facilities/nearby?lat=${lat}&lng=${lng}&radius=${miles}`
+        );
+        const json = await res.json();
+        if (!res.ok || !json.ok) {
+          throw new Error(json?.error ?? "Failed to load EPA facilities");
+        }
+        setEpaFacilities((json.facilities ?? []) as PointItem[]);
       } else {
         setEpaFacilities([]);
       }

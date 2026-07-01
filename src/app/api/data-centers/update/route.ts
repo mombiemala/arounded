@@ -36,6 +36,9 @@ type DataCenterRow = {
   last_seen: string;
 };
 
+// first_seen is intentionally omitted from upserts: the column defaults to
+// CURRENT_DATE on insert and is preserved (not in the update SET) on conflict.
+
 function chunk<T>(items: T[], size: number): T[][] {
   const out: T[][] = [];
   for (let i = 0; i < items.length; i += size) {
@@ -81,28 +84,34 @@ export async function GET() {
 
     const supabase = getSupabase();
 
-    // Full refresh of this source only — never touches rows from other sources
-    // (e.g. manually curated entries, which use a different `source`).
-    const { error: deleteError } = await supabase
-      .from("data_centers")
-      .delete()
-      .eq("source", SOURCE);
-    if (deleteError) throw deleteError;
-
-    let inserted = 0;
+    // Idempotent upsert keyed on (source, source_id) — inserts new facilities,
+    // updates moved/renamed ones, and preserves first_seen history. Only ever
+    // touches rows with source = 'PeeringDB', never manually curated entries.
+    let upserted = 0;
     for (const batch of chunk(rows, 500)) {
-      const { error: insertError } = await supabase
+      const { error: upsertError } = await supabase
         .from("data_centers")
-        .insert(batch);
-      if (insertError) throw insertError;
-      inserted += batch.length;
+        .upsert(batch, { onConflict: "source,source_id" });
+      if (upsertError) throw upsertError;
+      upserted += batch.length;
+    }
+
+    // Drop facilities that have disappeared from the feed for this source.
+    const currentIds = rows.map((r) => r.source_id);
+    if (currentIds.length > 0) {
+      const { error: pruneError } = await supabase
+        .from("data_centers")
+        .delete()
+        .eq("source", SOURCE)
+        .not("source_id", "in", `(${currentIds.join(",")})`);
+      if (pruneError) throw pruneError;
     }
 
     return NextResponse.json({
       ok: true,
       source: SOURCE,
       fetched: facilities.length,
-      inserted,
+      upserted,
     });
   } catch (e) {
     const message = e instanceof Error ? e.message : "Unexpected error";
