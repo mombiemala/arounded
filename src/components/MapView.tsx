@@ -81,6 +81,9 @@ export default function MapView() {
   const [epaFacilities, setEpaFacilities] = useState<PointItem[]>([]);
   const [layerError, setLayerError] = useState<string | null>(null);
 
+  const [smokeData, setSmokeData] = useState<GeoJSON.FeatureCollection | null>(null);
+  const [smokeLoading, setSmokeLoading] = useState(false);
+
   const [weather, setWeather] = useState<{
     tempF: number | null;
     humidity: number | null;
@@ -435,6 +438,46 @@ export default function MapView() {
       // hidden by default
       map.setLayoutProperty("smoke-daily-layer", "visibility", "none");
 
+      map.on("click", "smoke-daily-layer", (e) => {
+        const f = e.features?.[0];
+        if (!f) return;
+        const props: any = f.properties ?? {};
+        const density = props.Density ?? "Unknown";
+
+        new mapboxgl.Popup({ closeButton: true })
+          .setLngLat(e.lngLat)
+          .setHTML(
+            `
+    <div style="
+      font-size:13px;
+      color:#fff;
+      background:#111;
+      padding:8px 10px;
+      border-radius:6px;
+      max-width:220px;
+    ">
+      <div style="font-weight:600; margin-bottom:4px;">
+        Smoke plume
+      </div>
+      <div style="opacity:.85;">
+        Density: ${density}
+      </div>
+      <div style="opacity:.6; font-size:11px; margin-top:4px;">
+        Source: NOAA HMS
+      </div>
+    </div>
+    `
+          )
+          .addTo(map);
+      });
+
+      map.on("mouseenter", "smoke-daily-layer", () => {
+        map.getCanvas().style.cursor = "pointer";
+      });
+      map.on("mouseleave", "smoke-daily-layer", () => {
+        map.getCanvas().style.cursor = "";
+      });
+
       // Draw initial radius on default center
       drawRadiusAndCenter(DEFAULT_CENTER, radiusMiles);
     });
@@ -611,15 +654,72 @@ export default function MapView() {
     );
   }, [epaFacilities, showEpaFacilities]);
 
+  // Fetch the latest NOAA daily smoke GeoJSON once on mount
+  useEffect(() => {
+    let cancelled = false;
+
+    const loadSmoke = async () => {
+      try {
+        setSmokeLoading(true);
+        const urlRes = await fetch("/api/smoke/latest-url");
+        if (!urlRes.ok) throw new Error("Could not resolve smoke data URL");
+        const { url } = await urlRes.json();
+        if (!url) throw new Error("No smoke data URL available");
+
+        const geoRes = await fetch(url, { cache: "no-store" });
+        if (!geoRes.ok) throw new Error("Could not load smoke GeoJSON");
+        const geojson = await geoRes.json();
+
+        if (!cancelled) setSmokeData(geojson);
+      } catch (e) {
+        // Non-fatal: the smoke layer simply stays empty.
+        if (!cancelled) console.warn("Smoke layer unavailable:", e);
+      } finally {
+        if (!cancelled) setSmokeLoading(false);
+      }
+    };
+
+    loadSmoke();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  // Push smoke data into the map source (retries once the style is ready)
   useEffect(() => {
     const map = mapRef.current;
-    if (!map || !map.isStyleLoaded()) return;
+    if (!map || !smokeData) return;
 
-    map.setLayoutProperty(
-      "smoke-daily-layer",
-      "visibility",
-      showSmoke ? "visible" : "none"
-    );
+    const apply = () => {
+      const source = map.getSource("smoke-daily") as mapboxgl.GeoJSONSource | undefined;
+      if (source) source.setData(smokeData);
+    };
+
+    if (map.isStyleLoaded()) {
+      apply();
+    } else {
+      map.once("load", apply);
+    }
+  }, [smokeData]);
+
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map) return;
+
+    const apply = () => {
+      if (!map.getLayer("smoke-daily-layer")) return;
+      map.setLayoutProperty(
+        "smoke-daily-layer",
+        "visibility",
+        showSmoke ? "visible" : "none"
+      );
+    };
+
+    if (map.isStyleLoaded()) {
+      apply();
+    } else {
+      map.once("load", apply);
+    }
   }, [showSmoke]);
 
   function drawRadiusAndCenter(centerLngLat: [number, number], miles: number) {
@@ -803,7 +903,7 @@ export default function MapView() {
   return (
     <div className="w-full min-h-[calc(100vh-64px)] flex">
       {/* Left panel */}
-      <div className="w-full max-w-md border-r border-black/10 p-4 space-y-4">
+      <div className="w-full max-w-md border-r border-white/10 p-4 space-y-4 overflow-y-auto max-h-[calc(100vh-64px)]">
         <div>
           <div className="text-xl font-semibold">Arounded</div>
           <div className="text-sm opacity-70">Search a place, set a radius, explore layers.</div>
@@ -815,19 +915,19 @@ export default function MapView() {
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Address, city, ZIP"
-            className="w-full rounded-lg border border-black/15 px-3 py-2 outline-none"
+            className="w-full rounded-lg border border-white/15 bg-white/5 px-3 py-2 outline-none placeholder:text-white/40 focus:border-white/40 transition-colors"
           />
           <div className="text-xs opacity-70">
             {isSearching ? "Searching…" : searchError ? searchError : " "}
           </div>
 
           {results.length > 0 && (
-            <div className="rounded-lg border border-black/10 overflow-hidden">
+            <div className="rounded-lg border border-white/10 overflow-hidden bg-white/5">
               {results.map((r) => (
                 <button
                   key={r.id}
                   onClick={() => selectResult(r)}
-                  className="w-full text-left px-3 py-2 hover:bg-black/5 border-b border-black/5 last:border-b-0"
+                  className="w-full text-left px-3 py-2 hover:bg-white/10 border-b border-white/5 last:border-b-0 transition-colors"
                 >
                   <div className="text-sm">{r.place_name}</div>
                 </button>
@@ -843,8 +943,10 @@ export default function MapView() {
               <button
                 key={m}
                 onClick={() => setRadiusMiles(m)}
-                className={`px-3 py-1.5 rounded-full border text-sm ${
-                  radiusMiles === m ? "border-black/40" : "border-black/15"
+                className={`px-3 py-1.5 rounded-full border text-sm transition-colors ${
+                  radiusMiles === m
+                    ? "border-white/40 bg-white/10"
+                    : "border-white/15 hover:border-white/30"
                 }`}
               >
                 {m} mi
@@ -856,36 +958,49 @@ export default function MapView() {
         <div className="space-y-2">
           <label className="text-sm font-medium">Layers</label>
 
-          <div className="flex items-center justify-between rounded-lg border border-black/10 px-3 py-2">
-            <div className="text-sm">Data centers</div>
+          <label className="flex items-center justify-between rounded-lg border border-white/10 bg-white/5 px-3 py-2 cursor-pointer">
+            <span className="text-sm flex items-center gap-2">
+              <span className="inline-block w-2.5 h-2.5 rounded-full" style={{ background: "#ff6b6b" }} />
+              Data centers
+            </span>
             <input
               type="checkbox"
               checked={showDataCenters}
               onChange={(e) => setShowDataCenters(e.target.checked)}
             />
-          </div>
+          </label>
 
-          <div className="flex items-center justify-between rounded-lg border border-black/10 px-3 py-2">
-            <div className="text-sm">EPA facilities</div>
+          <label className="flex items-center justify-between rounded-lg border border-white/10 bg-white/5 px-3 py-2 cursor-pointer">
+            <span className="text-sm flex items-center gap-2">
+              <span className="inline-block w-2.5 h-2.5 rounded-full" style={{ background: "#4dabf7" }} />
+              EPA facilities
+            </span>
             <input
               type="checkbox"
               checked={showEpaFacilities}
               onChange={(e) => setShowEpaFacilities(e.target.checked)}
             />
-          </div>
+          </label>
 
-          <div className="flex items-center justify-between rounded-lg border border-white/10 bg-white/5 px-3 py-2">
-            <div className="text-sm">Smoke</div>
+          <label className="flex items-center justify-between rounded-lg border border-white/10 bg-white/5 px-3 py-2 cursor-pointer">
+            <span className="text-sm flex items-center gap-2">
+              <span className="inline-block w-2.5 h-2.5 rounded-full" style={{ background: "#ffa94d" }} />
+              Smoke
+            </span>
             <input
               type="checkbox"
               checked={showSmoke}
               onChange={(e) => setShowSmoke(e.target.checked)}
             />
-          </div>
+          </label>
 
           <div className="text-xs opacity-60 px-1">
-            Daily smoke layer<br />
-            Based on NOAA satellite analysis. Updated once per day.
+            Daily smoke layer — NOAA satellite analysis, updated once per day.
+            {smokeLoading
+              ? " Loading plumes…"
+              : smokeData?.features?.length != null
+              ? ` ${smokeData.features.length} plume${smokeData.features.length === 1 ? "" : "s"} loaded.`
+              : ""}
           </div>
 
           {layerError && <div className="text-xs text-red-600">{layerError}</div>}
@@ -948,14 +1063,15 @@ export default function MapView() {
                 )}
 
                 <div className="text-xs opacity-60">
-                  (MVP) Air values are estimates; we'll add source links + improved AQI later.
+                  Air values are modeled estimates from Open-Meteo. For urgent
+                  decisions, use official local alerts.
                 </div>
               </>
             )}
           </div>
         </div>
 
-        <div className="rounded-lg border border-black/10 p-3 text-sm space-y-1">
+        <div className="rounded-lg border border-white/10 bg-white/5 p-3 text-sm space-y-1">
           <div className="flex items-center justify-between mb-2">
             <div className="font-medium">Current selection</div>
             <button
@@ -1063,9 +1179,6 @@ export default function MapView() {
           </div>
         )}
 
-        <div className="text-xs opacity-60">
-          Next: data center + EPA facility layers, then AQI/smoke/weather, then timeline.
-        </div>
       </div>
 
       {/* Map */}

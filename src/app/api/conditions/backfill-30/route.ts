@@ -1,10 +1,14 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+export const dynamic = "force-dynamic";
+
+function getSupabase() {
+  return createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  );
+}
 
 function cToF(c: number) {
   return (c * 9) / 5 + 32;
@@ -38,6 +42,7 @@ async function getAirDaily(lat: number, lng: number, start: string, end: string)
 
 export async function GET() {
   try {
+    const supabase = getSupabase();
     const { data: places, error } = await supabase
       .from("saved_places")
       .select("id, lat, lng");

@@ -1,10 +1,14 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+export const dynamic = "force-dynamic";
+
+function getSupabase() {
+  return createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  );
+}
 
 // NOAA HMS Smoke Detection (ArcGIS FeatureServer layer 0)
 const HMS_SMOKE_GEOJSON_URL =
@@ -21,6 +25,7 @@ export async function GET() {
 
     const geojson = await res.json();
 
+    const supabase = getSupabase();
     const { error } = await supabase.storage
       .from("smoke-daily")
       .upload("latest.geojson", JSON.stringify(geojson), {
