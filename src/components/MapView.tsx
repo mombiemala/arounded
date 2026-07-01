@@ -22,24 +22,42 @@ function milesToKm(miles: number) {
   return miles * 1.609344;
 }
 
+type MapboxV6Feature = {
+  id?: string;
+  properties?: {
+    mapbox_id?: string;
+    name?: string;
+    full_address?: string;
+    place_formatted?: string;
+  };
+  geometry?: { coordinates?: [number, number] };
+};
+
 async function geocode(query: string): Promise<GeocodeFeature[]> {
   const token = process.env.NEXT_PUBLIC_MAPBOX_TOKEN;
   if (!token) throw new Error("Missing NEXT_PUBLIC_MAPBOX_TOKEN");
 
   const url =
-    "https://api.mapbox.com/geocoding/v5/mapbox.places/" +
-    encodeURIComponent(query) +
-    `.json?access_token=${token}&autocomplete=true&limit=5&country=US`;
+    "https://api.mapbox.com/search/geocode/v6/forward" +
+    `?q=${encodeURIComponent(query)}` +
+    `&access_token=${token}&autocomplete=true&limit=5&country=us`;
 
   const res = await fetch(url);
   if (!res.ok) throw new Error("Geocoding request failed");
 
-  const data = await res.json();
-  return (data.features ?? []).map((f: any) => ({
-    id: f.id,
-    place_name: f.place_name,
-    center: f.center,
-  }));
+  const data: { features?: MapboxV6Feature[] } = await res.json();
+  return (data.features ?? [])
+    .filter((f) => Array.isArray(f.geometry?.coordinates))
+    .map((f, i) => {
+      const props = f.properties ?? {};
+      const name =
+        props.full_address ?? props.name ?? props.place_formatted ?? "Unknown place";
+      return {
+        id: props.mapbox_id ?? f.id ?? `${name}-${i}`,
+        place_name: name,
+        center: f.geometry!.coordinates as [number, number],
+      };
+    });
 }
 import { supabase } from "@/lib/supabaseClient";
 import { createBrowserClient } from "@/lib/supabaseBrowser";
@@ -60,6 +78,7 @@ export default function MapView() {
   const searchParams = useSearchParams();
   const mapContainerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<mapboxgl.Map | null>(null);
+  const skipSearchRef = useRef(false);
 
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<GeocodeFeature[]>([]);
@@ -871,6 +890,12 @@ export default function MapView() {
 
   // Search with a light debounce
   useEffect(() => {
+    // Skip the re-search triggered by filling the input after a selection.
+    if (skipSearchRef.current) {
+      skipSearchRef.current = false;
+      return;
+    }
+
     if (!query || query.trim().length < 3) {
       setResults([]);
       setSearchError(null);
@@ -883,8 +908,8 @@ export default function MapView() {
         setSearchError(null);
         const r = await geocode(query.trim());
         setResults(r);
-      } catch (e: any) {
-        setSearchError(e?.message ?? "Search failed");
+      } catch (e) {
+        setSearchError(e instanceof Error ? e.message : "Search failed");
         setResults([]);
       } finally {
         setIsSearching(false);
@@ -895,6 +920,7 @@ export default function MapView() {
   }, [query]);
 
   function selectResult(r: GeocodeFeature) {
+    skipSearchRef.current = true;
     setSelectedPlace(r);
     setResults([]);
     setQuery(r.place_name);
@@ -914,7 +940,14 @@ export default function MapView() {
           <input
             value={query}
             onChange={(e) => setQuery(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && results.length > 0) {
+                e.preventDefault();
+                selectResult(results[0]);
+              }
+            }}
             placeholder="Address, city, ZIP"
+            aria-label="Search for a place"
             className="w-full rounded-lg border border-white/15 bg-white/5 px-3 py-2 outline-none placeholder:text-white/40 focus:border-white/40 transition-colors"
           />
           <div className="text-xs opacity-70">
@@ -934,6 +967,16 @@ export default function MapView() {
               ))}
             </div>
           )}
+
+          {!isSearching &&
+            !searchError &&
+            query.trim().length >= 3 &&
+            results.length === 0 &&
+            query.trim() !== selectedPlace?.place_name?.trim() && (
+              <div className="text-xs opacity-60 px-1">
+                No matches found. Try a city, ZIP, or full address.
+              </div>
+            )}
         </div>
 
         <div className="space-y-2">
