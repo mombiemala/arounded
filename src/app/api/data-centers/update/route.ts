@@ -87,6 +87,7 @@ export async function GET() {
     // Idempotent upsert keyed on (source, source_id) — inserts new facilities,
     // updates moved/renamed ones, and preserves first_seen history. Only ever
     // touches rows with source = 'PeeringDB', never manually curated entries.
+    // Every current row gets last_seen = today.
     let upserted = 0;
     for (const batch of chunk(rows, 500)) {
       const { error: upsertError } = await supabase
@@ -96,15 +97,18 @@ export async function GET() {
       upserted += batch.length;
     }
 
-    // Drop facilities that have disappeared from the feed for this source.
-    const currentIds = rows.map((r) => r.source_id);
-    if (currentIds.length > 0) {
-      const { error: pruneError } = await supabase
+    // Prune facilities that dropped out of the feed: any PeeringDB row not
+    // touched by this run still has an older last_seen. (Avoids sending a
+    // multi-thousand-id NOT IN filter.)
+    let pruned = 0;
+    if (rows.length > 0) {
+      const { error: pruneError, count } = await supabase
         .from("data_centers")
-        .delete()
+        .delete({ count: "exact" })
         .eq("source", SOURCE)
-        .not("source_id", "in", `(${currentIds.join(",")})`);
+        .neq("last_seen", today);
       if (pruneError) throw pruneError;
+      pruned = count ?? 0;
     }
 
     return NextResponse.json({
@@ -112,6 +116,7 @@ export async function GET() {
       source: SOURCE,
       fetched: facilities.length,
       upserted,
+      pruned,
     });
   } catch (e) {
     const message = e instanceof Error ? e.message : "Unexpected error";
