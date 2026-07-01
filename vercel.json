@@ -1,6 +1,7 @@
 {
   "crons": [
     { "path": "/api/smoke/update", "schedule": "0 10 * * *" },
-    { "path": "/api/conditions/daily-log", "schedule": "20 10 * * *" }
+    { "path": "/api/conditions/daily-log", "schedule": "20 10 * * *" },
+    { "path": "/api/data-centers/update", "schedule": "0 9 * * 1" }
   ]
 }

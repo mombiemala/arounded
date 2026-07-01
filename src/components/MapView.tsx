@@ -22,24 +22,80 @@ function milesToKm(miles: number) {
   return miles * 1.609344;
 }
 
+// Escape values before interpolating into popup HTML (defense against markup
+// sneaking in through dataset fields).
+function escapeHtml(value: unknown): string {
+  return String(value ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
+function pointCoords(
+  feature: mapboxgl.GeoJSONFeature
+): [number, number] | null {
+  const geometry = feature.geometry;
+  return geometry.type === "Point"
+    ? (geometry.coordinates as [number, number])
+    : null;
+}
+
+function pointsToFeatureCollection(
+  items: PointItem[]
+): GeoJSON.FeatureCollection<GeoJSON.Point> {
+  return {
+    type: "FeatureCollection",
+    features: items.map((d) => ({
+      type: "Feature",
+      properties: {
+        id: d.id,
+        name: d.name,
+        status: d.status ?? "unknown",
+        source: d.source ?? "",
+      },
+      geometry: { type: "Point", coordinates: [d.lng, d.lat] },
+    })),
+  };
+}
+
+type MapboxV6Feature = {
+  id?: string;
+  properties?: {
+    mapbox_id?: string;
+    name?: string;
+    full_address?: string;
+    place_formatted?: string;
+  };
+  geometry?: { coordinates?: [number, number] };
+};
+
 async function geocode(query: string): Promise<GeocodeFeature[]> {
   const token = process.env.NEXT_PUBLIC_MAPBOX_TOKEN;
   if (!token) throw new Error("Missing NEXT_PUBLIC_MAPBOX_TOKEN");
 
   const url =
-    "https://api.mapbox.com/geocoding/v5/mapbox.places/" +
-    encodeURIComponent(query) +
-    `.json?access_token=${token}&autocomplete=true&limit=5&country=US`;
+    "https://api.mapbox.com/search/geocode/v6/forward" +
+    `?q=${encodeURIComponent(query)}` +
+    `&access_token=${token}&autocomplete=true&limit=5&country=us`;
 
   const res = await fetch(url);
   if (!res.ok) throw new Error("Geocoding request failed");
 
-  const data = await res.json();
-  return (data.features ?? []).map((f: any) => ({
-    id: f.id,
-    place_name: f.place_name,
-    center: f.center,
-  }));
+  const data: { features?: MapboxV6Feature[] } = await res.json();
+  return (data.features ?? [])
+    .filter((f) => Array.isArray(f.geometry?.coordinates))
+    .map((f, i) => {
+      const props = f.properties ?? {};
+      const name =
+        props.full_address ?? props.name ?? props.place_formatted ?? "Unknown place";
+      return {
+        id: props.mapbox_id ?? f.id ?? `${name}-${i}`,
+        place_name: name,
+        center: f.geometry!.coordinates as [number, number],
+      };
+    });
 }
 import { supabase } from "@/lib/supabaseClient";
 import { createBrowserClient } from "@/lib/supabaseBrowser";
@@ -55,11 +111,19 @@ type PointItem = {
   source?: string | null;
 };
 
+type DailyConditionRow = {
+  date: string;
+  smoke_present: boolean | null;
+  us_aqi: number | null;
+  temp_max_f: number | null;
+};
+
 export default function MapView() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const mapContainerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<mapboxgl.Map | null>(null);
+  const skipSearchRef = useRef(false);
 
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<GeocodeFeature[]>([]);
@@ -81,6 +145,9 @@ export default function MapView() {
   const [epaFacilities, setEpaFacilities] = useState<PointItem[]>([]);
   const [layerError, setLayerError] = useState<string | null>(null);
 
+  const [smokeData, setSmokeData] = useState<GeoJSON.FeatureCollection | null>(null);
+  const [smokeLoading, setSmokeLoading] = useState(false);
+
   const [weather, setWeather] = useState<{
     tempF: number | null;
     humidity: number | null;
@@ -100,7 +167,7 @@ export default function MapView() {
   const [conditionsError, setConditionsError] = useState<string | null>(null);
   const [conditionsLoading, setConditionsLoading] = useState(false);
 
-  const [history, setHistory] = useState<any[] | null>(null);
+  const [history, setHistory] = useState<DailyConditionRow[] | null>(null);
   const [historyStats, setHistoryStats] = useState<{ smoke7: number; smoke30: number } | null>(null);
   const [showLoginPrompt, setShowLoginPrompt] = useState(false);
   const [savingLocation, setSavingLocation] = useState(false);
@@ -332,8 +399,9 @@ export default function MapView() {
       map.on("click", "data-centers-layer", (e) => {
         const f = e.features?.[0];
         if (!f) return;
-        const props: any = f.properties ?? {};
-        const coords = (f.geometry as any).coordinates;
+        const props = f.properties ?? {};
+        const coords = pointCoords(f);
+        if (!coords) return;
 
         new mapboxgl.Popup({ closeButton: true })
           .setLngLat(coords)
@@ -348,13 +416,13 @@ export default function MapView() {
       max-width:220px;
     ">
       <div style="font-weight:600; margin-bottom:4px;">
-        ${props.name ?? "Data Center"}
+        ${props.name ? escapeHtml(props.name) : "Data Center"}
       </div>
       <div style="opacity:.85;">
-        Status: ${props.status ?? "unknown"}
+        Status: ${props.status ? escapeHtml(props.status) : "unknown"}
       </div>
       <div style="opacity:.6; font-size:11px; margin-top:4px;">
-        Source: ${props.source ?? "—"}
+        Source: ${props.source ? escapeHtml(props.source) : "—"}
       </div>
     </div>
     `
@@ -365,8 +433,9 @@ export default function MapView() {
       map.on("click", "epa-facilities-layer", (e) => {
         const f = e.features?.[0];
         if (!f) return;
-        const props: any = f.properties ?? {};
-        const coords = (f.geometry as any).coordinates;
+        const props = f.properties ?? {};
+        const coords = pointCoords(f);
+        if (!coords) return;
 
         new mapboxgl.Popup({ closeButton: true })
           .setLngLat(coords)
@@ -381,10 +450,10 @@ export default function MapView() {
       max-width:220px;
     ">
       <div style="font-weight:600; margin-bottom:4px;">
-        ${props.name ?? "EPA Facility"}
+        ${props.name ? escapeHtml(props.name) : "EPA Facility"}
       </div>
       <div style="opacity:.6; font-size:11px;">
-        Source: ${props.source ?? "—"}
+        Source: ${props.source ? escapeHtml(props.source) : "—"}
       </div>
     </div>
     `
@@ -435,6 +504,46 @@ export default function MapView() {
       // hidden by default
       map.setLayoutProperty("smoke-daily-layer", "visibility", "none");
 
+      map.on("click", "smoke-daily-layer", (e) => {
+        const f = e.features?.[0];
+        if (!f) return;
+        const props = f.properties ?? {};
+        const density = props.Density ? escapeHtml(props.Density) : "Unknown";
+
+        new mapboxgl.Popup({ closeButton: true })
+          .setLngLat(e.lngLat)
+          .setHTML(
+            `
+    <div style="
+      font-size:13px;
+      color:#fff;
+      background:#111;
+      padding:8px 10px;
+      border-radius:6px;
+      max-width:220px;
+    ">
+      <div style="font-weight:600; margin-bottom:4px;">
+        Smoke plume
+      </div>
+      <div style="opacity:.85;">
+        Density: ${density}
+      </div>
+      <div style="opacity:.6; font-size:11px; margin-top:4px;">
+        Source: NOAA HMS
+      </div>
+    </div>
+    `
+          )
+          .addTo(map);
+      });
+
+      map.on("mouseenter", "smoke-daily-layer", () => {
+        map.getCanvas().style.cursor = "pointer";
+      });
+      map.on("mouseleave", "smoke-daily-layer", () => {
+        map.getCanvas().style.cursor = "";
+      });
+
       // Draw initial radius on default center
       drawRadiusAndCenter(DEFAULT_CENTER, radiusMiles);
     });
@@ -453,7 +562,6 @@ export default function MapView() {
 
     drawRadiusAndCenter(center, radiusMiles);
     mapRef.current.easeTo({ center, zoom: Math.max(mapRef.current.getZoom(), 10) });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [center, radiusMiles]);
 
   useEffect(() => {
@@ -474,8 +582,8 @@ export default function MapView() {
         const [w, a] = await Promise.all([fetchWeather(lat, lng), fetchAirQuality(lat, lng)]);
         setWeather(w);
         setAir(a);
-      } catch (e: any) {
-        setConditionsError(e?.message ?? "Failed to load conditions");
+      } catch (e) {
+        setConditionsError(e instanceof Error ? e.message : "Failed to load conditions");
         setWeather(null);
         setAir(null);
       } finally {
@@ -515,11 +623,11 @@ export default function MapView() {
       .lte("date", today)
       .order("date", { ascending: false });
 
-    const rows = data ?? [];
+    const rows = (data ?? []) as DailyConditionRow[];
     setHistory(rows);
 
-    const smoke30 = rows.filter((r: any) => r.smoke_present).length;
-    const smoke7 = rows.filter((r: any) => r.smoke_present && r.date >= d7s).length;
+    const smoke30 = rows.filter((r) => r.smoke_present).length;
+    const smoke7 = rows.filter((r) => r.smoke_present && r.date >= d7s).length;
     setHistoryStats({ smoke7, smoke30 });
   }
 
@@ -549,7 +657,7 @@ export default function MapView() {
 
       // Refresh history after saving
       await fetchHistory();
-    } catch (error: any) {
+    } catch (error) {
       console.error("Failed to save location:", error);
     } finally {
       setSavingLocation(false);
@@ -563,6 +671,7 @@ export default function MapView() {
       setHistory(null);
       setHistoryStats(null);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
 
   useEffect(() => {
@@ -572,14 +681,7 @@ export default function MapView() {
     const source = map.getSource("data-centers") as mapboxgl.GeoJSONSource | undefined;
     if (!source) return;
 
-    source.setData({
-      type: "FeatureCollection",
-      features: dataCenters.map((d) => ({
-        type: "Feature",
-        properties: { id: d.id, name: d.name, status: d.status ?? "unknown", source: d.source ?? "" },
-        geometry: { type: "Point", coordinates: [d.lng, d.lat] },
-      })),
-    } as any);
+    source.setData(pointsToFeatureCollection(dataCenters));
 
     map.setLayoutProperty(
       "data-centers-layer",
@@ -595,14 +697,7 @@ export default function MapView() {
     const source = map.getSource("epa-facilities") as mapboxgl.GeoJSONSource | undefined;
     if (!source) return;
 
-    source.setData({
-      type: "FeatureCollection",
-      features: epaFacilities.map((d) => ({
-        type: "Feature",
-        properties: { id: d.id, name: d.name, source: d.source ?? "" },
-        geometry: { type: "Point", coordinates: [d.lng, d.lat] },
-      })),
-    } as any);
+    source.setData(pointsToFeatureCollection(epaFacilities));
 
     map.setLayoutProperty(
       "epa-facilities-layer",
@@ -611,15 +706,72 @@ export default function MapView() {
     );
   }, [epaFacilities, showEpaFacilities]);
 
+  // Fetch the latest NOAA daily smoke GeoJSON once on mount
+  useEffect(() => {
+    let cancelled = false;
+
+    const loadSmoke = async () => {
+      try {
+        setSmokeLoading(true);
+        const urlRes = await fetch("/api/smoke/latest-url");
+        if (!urlRes.ok) throw new Error("Could not resolve smoke data URL");
+        const { url } = await urlRes.json();
+        if (!url) throw new Error("No smoke data URL available");
+
+        const geoRes = await fetch(url, { cache: "no-store" });
+        if (!geoRes.ok) throw new Error("Could not load smoke GeoJSON");
+        const geojson = await geoRes.json();
+
+        if (!cancelled) setSmokeData(geojson);
+      } catch (e) {
+        // Non-fatal: the smoke layer simply stays empty.
+        if (!cancelled) console.warn("Smoke layer unavailable:", e);
+      } finally {
+        if (!cancelled) setSmokeLoading(false);
+      }
+    };
+
+    loadSmoke();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  // Push smoke data into the map source (retries once the style is ready)
   useEffect(() => {
     const map = mapRef.current;
-    if (!map || !map.isStyleLoaded()) return;
+    if (!map || !smokeData) return;
 
-    map.setLayoutProperty(
-      "smoke-daily-layer",
-      "visibility",
-      showSmoke ? "visible" : "none"
-    );
+    const apply = () => {
+      const source = map.getSource("smoke-daily") as mapboxgl.GeoJSONSource | undefined;
+      if (source) source.setData(smokeData);
+    };
+
+    if (map.isStyleLoaded()) {
+      apply();
+    } else {
+      map.once("load", apply);
+    }
+  }, [smokeData]);
+
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map) return;
+
+    const apply = () => {
+      if (!map.getLayer("smoke-daily-layer")) return;
+      map.setLayoutProperty(
+        "smoke-daily-layer",
+        "visibility",
+        showSmoke ? "visible" : "none"
+      );
+    };
+
+    if (map.isStyleLoaded()) {
+      apply();
+    } else {
+      map.once("load", apply);
+    }
   }, [showSmoke]);
 
   function drawRadiusAndCenter(centerLngLat: [number, number], miles: number) {
@@ -633,12 +785,12 @@ export default function MapView() {
 
     const radiusSource = map.getSource("radius") as mapboxgl.GeoJSONSource | undefined;
     if (radiusSource) {
-      radiusSource.setData(circle as any);
+      radiusSource.setData(circle);
     }
 
     const centerSource = map.getSource("center-point") as mapboxgl.GeoJSONSource | undefined;
     if (centerSource) {
-      centerSource.setData({
+      const centerFc: GeoJSON.FeatureCollection<GeoJSON.Point> = {
         type: "FeatureCollection",
         features: [
           {
@@ -647,7 +799,8 @@ export default function MapView() {
             geometry: { type: "Point", coordinates: centerLngLat },
           },
         ],
-      } as any);
+      };
+      centerSource.setData(centerFc);
     }
   }
 
@@ -658,9 +811,10 @@ export default function MapView() {
       const lat = centerLngLat[1];
       const lng = centerLngLat[0];
 
-      // Quick distance filter (bounding box). We'll refine later if needed.
-      const latDelta = miles / 69; // ~69 miles per degree latitude
-      const lngDelta = miles / 54; // rough; acceptable for MVP
+      // Bounding-box filter. ~69 miles per degree latitude; longitude degrees
+      // shrink toward the poles, so scale by cos(latitude).
+      const latDelta = miles / 69;
+      const lngDelta = miles / (69 * Math.max(Math.cos((lat * Math.PI) / 180), 0.01));
 
       if (showDataCenters) {
         const { data, error } = await supabase
@@ -673,28 +827,27 @@ export default function MapView() {
           .limit(2000);
 
         if (error) throw error;
-        setDataCenters((data ?? []) as any);
+        setDataCenters((data ?? []) as PointItem[]);
       } else {
         setDataCenters([]);
       }
 
       if (showEpaFacilities) {
-        const { data, error } = await supabase
-          .from("epa_facilities")
-          .select("id,name,lat,lng,source")
-          .gte("lat", lat - latDelta)
-          .lte("lat", lat + latDelta)
-          .gte("lng", lng - lngDelta)
-          .lte("lng", lng + lngDelta)
-          .limit(2000);
-
-        if (error) throw error;
-        setEpaFacilities((data ?? []) as any);
+        // EPA facilities are queried on demand from the FRS proxy route rather
+        // than a stored table (the national dataset is far too large to mirror).
+        const res = await fetch(
+          `/api/facilities/nearby?lat=${lat}&lng=${lng}&radius=${miles}`
+        );
+        const json = await res.json();
+        if (!res.ok || !json.ok) {
+          throw new Error(json?.error ?? "Failed to load EPA facilities");
+        }
+        setEpaFacilities((json.facilities ?? []) as PointItem[]);
       } else {
         setEpaFacilities([]);
       }
-    } catch (e: any) {
-      setLayerError(e?.message ?? "Failed to load map layers");
+    } catch (e) {
+      setLayerError(e instanceof Error ? e.message : "Failed to load map layers");
     }
   }
 
@@ -771,6 +924,12 @@ export default function MapView() {
 
   // Search with a light debounce
   useEffect(() => {
+    // Skip the re-search triggered by filling the input after a selection.
+    if (skipSearchRef.current) {
+      skipSearchRef.current = false;
+      return;
+    }
+
     if (!query || query.trim().length < 3) {
       setResults([]);
       setSearchError(null);
@@ -783,8 +942,8 @@ export default function MapView() {
         setSearchError(null);
         const r = await geocode(query.trim());
         setResults(r);
-      } catch (e: any) {
-        setSearchError(e?.message ?? "Search failed");
+      } catch (e) {
+        setSearchError(e instanceof Error ? e.message : "Search failed");
         setResults([]);
       } finally {
         setIsSearching(false);
@@ -795,6 +954,7 @@ export default function MapView() {
   }, [query]);
 
   function selectResult(r: GeocodeFeature) {
+    skipSearchRef.current = true;
     setSelectedPlace(r);
     setResults([]);
     setQuery(r.place_name);
@@ -803,7 +963,7 @@ export default function MapView() {
   return (
     <div className="w-full min-h-[calc(100vh-64px)] flex">
       {/* Left panel */}
-      <div className="w-full max-w-md border-r border-black/10 p-4 space-y-4">
+      <div className="w-full max-w-md border-r border-white/10 p-4 space-y-4 overflow-y-auto max-h-[calc(100vh-64px)]">
         <div>
           <div className="text-xl font-semibold">Arounded</div>
           <div className="text-sm opacity-70">Search a place, set a radius, explore layers.</div>
@@ -814,26 +974,43 @@ export default function MapView() {
           <input
             value={query}
             onChange={(e) => setQuery(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && results.length > 0) {
+                e.preventDefault();
+                selectResult(results[0]);
+              }
+            }}
             placeholder="Address, city, ZIP"
-            className="w-full rounded-lg border border-black/15 px-3 py-2 outline-none"
+            aria-label="Search for a place"
+            className="w-full rounded-lg border border-white/15 bg-white/5 px-3 py-2 outline-none placeholder:text-white/40 focus:border-white/40 transition-colors"
           />
           <div className="text-xs opacity-70">
             {isSearching ? "Searching…" : searchError ? searchError : " "}
           </div>
 
           {results.length > 0 && (
-            <div className="rounded-lg border border-black/10 overflow-hidden">
+            <div className="rounded-lg border border-white/10 overflow-hidden bg-white/5">
               {results.map((r) => (
                 <button
                   key={r.id}
                   onClick={() => selectResult(r)}
-                  className="w-full text-left px-3 py-2 hover:bg-black/5 border-b border-black/5 last:border-b-0"
+                  className="w-full text-left px-3 py-2 hover:bg-white/10 border-b border-white/5 last:border-b-0 transition-colors"
                 >
                   <div className="text-sm">{r.place_name}</div>
                 </button>
               ))}
             </div>
           )}
+
+          {!isSearching &&
+            !searchError &&
+            query.trim().length >= 3 &&
+            results.length === 0 &&
+            query.trim() !== selectedPlace?.place_name?.trim() && (
+              <div className="text-xs opacity-60 px-1">
+                No matches found. Try a city, ZIP, or full address.
+              </div>
+            )}
         </div>
 
         <div className="space-y-2">
@@ -843,8 +1020,10 @@ export default function MapView() {
               <button
                 key={m}
                 onClick={() => setRadiusMiles(m)}
-                className={`px-3 py-1.5 rounded-full border text-sm ${
-                  radiusMiles === m ? "border-black/40" : "border-black/15"
+                className={`px-3 py-1.5 rounded-full border text-sm transition-colors ${
+                  radiusMiles === m
+                    ? "border-white/40 bg-white/10"
+                    : "border-white/15 hover:border-white/30"
                 }`}
               >
                 {m} mi
@@ -856,36 +1035,49 @@ export default function MapView() {
         <div className="space-y-2">
           <label className="text-sm font-medium">Layers</label>
 
-          <div className="flex items-center justify-between rounded-lg border border-black/10 px-3 py-2">
-            <div className="text-sm">Data centers</div>
+          <label className="flex items-center justify-between rounded-lg border border-white/10 bg-white/5 px-3 py-2 cursor-pointer">
+            <span className="text-sm flex items-center gap-2">
+              <span className="inline-block w-2.5 h-2.5 rounded-full" style={{ background: "#ff6b6b" }} />
+              Data centers
+            </span>
             <input
               type="checkbox"
               checked={showDataCenters}
               onChange={(e) => setShowDataCenters(e.target.checked)}
             />
-          </div>
+          </label>
 
-          <div className="flex items-center justify-between rounded-lg border border-black/10 px-3 py-2">
-            <div className="text-sm">EPA facilities</div>
+          <label className="flex items-center justify-between rounded-lg border border-white/10 bg-white/5 px-3 py-2 cursor-pointer">
+            <span className="text-sm flex items-center gap-2">
+              <span className="inline-block w-2.5 h-2.5 rounded-full" style={{ background: "#4dabf7" }} />
+              EPA facilities
+            </span>
             <input
               type="checkbox"
               checked={showEpaFacilities}
               onChange={(e) => setShowEpaFacilities(e.target.checked)}
             />
-          </div>
+          </label>
 
-          <div className="flex items-center justify-between rounded-lg border border-white/10 bg-white/5 px-3 py-2">
-            <div className="text-sm">Smoke</div>
+          <label className="flex items-center justify-between rounded-lg border border-white/10 bg-white/5 px-3 py-2 cursor-pointer">
+            <span className="text-sm flex items-center gap-2">
+              <span className="inline-block w-2.5 h-2.5 rounded-full" style={{ background: "#ffa94d" }} />
+              Smoke
+            </span>
             <input
               type="checkbox"
               checked={showSmoke}
               onChange={(e) => setShowSmoke(e.target.checked)}
             />
-          </div>
+          </label>
 
           <div className="text-xs opacity-60 px-1">
-            Daily smoke layer<br />
-            Based on NOAA satellite analysis. Updated once per day.
+            Daily smoke layer — NOAA satellite analysis, updated once per day.
+            {smokeLoading
+              ? " Loading plumes…"
+              : smokeData?.features?.length != null
+              ? ` ${smokeData.features.length} plume${smokeData.features.length === 1 ? "" : "s"} loaded.`
+              : ""}
           </div>
 
           {layerError && <div className="text-xs text-red-600">{layerError}</div>}
@@ -948,14 +1140,15 @@ export default function MapView() {
                 )}
 
                 <div className="text-xs opacity-60">
-                  (MVP) Air values are estimates; we'll add source links + improved AQI later.
+                  Air values are modeled estimates from Open-Meteo. For urgent
+                  decisions, use official local alerts.
                 </div>
               </>
             )}
           </div>
         </div>
 
-        <div className="rounded-lg border border-black/10 p-3 text-sm space-y-1">
+        <div className="rounded-lg border border-white/10 bg-white/5 p-3 text-sm space-y-1">
           <div className="flex items-center justify-between mb-2">
             <div className="font-medium">Current selection</div>
             <button
@@ -1033,7 +1226,7 @@ export default function MapView() {
             {history && history.length > 0 && (
               <div className="pt-2 border-t border-white/10 space-y-1">
                 <div className="text-xs opacity-60">Last 10 days</div>
-                {history.slice(0, 10).map((r: any) => (
+                {history.slice(0, 10).map((r) => (
                   <div key={r.date} className="flex justify-between text-xs">
                     <div className="opacity-80">{r.date}</div>
                     <div className="opacity-80">
@@ -1063,9 +1256,6 @@ export default function MapView() {
           </div>
         )}
 
-        <div className="text-xs opacity-60">
-          Next: data center + EPA facility layers, then AQI/smoke/weather, then timeline.
-        </div>
       </div>
 
       {/* Map */}

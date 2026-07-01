@@ -2,10 +2,15 @@ import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import booleanPointInPolygon from "@turf/boolean-point-in-polygon";
 import { point } from "@turf/helpers";
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+
+export const dynamic = "force-dynamic";
+
+function getSupabase() {
+  return createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  );
+}
 
 function cToF(c: number) {
   return (c * 9) / 5 + 32;
@@ -37,38 +42,44 @@ async function getAirDaily(lat: number, lng: number, start: string, end: string)
   return res.json();
 }
 
-async function getSmokePresent(lat: number, lng: number) {
-  const u = await fetch(
-    `${process.env.NEXT_PUBLIC_SITE_URL}/api/smoke/latest-url`,
-    { cache: "no-store" }
-  );
+async function getSmokePresent(lat: number, lng: number): Promise<boolean | null> {
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL;
+  if (!siteUrl) return null;
 
-  if (!u.ok) return null;
-  const { url } = await u.json();
+  try {
+    const u = await fetch(`${siteUrl}/api/smoke/latest-url`, { cache: "no-store" });
+    if (!u.ok) return null;
+    const { url } = await u.json();
+    if (!url) return null;
 
-  const geoRes = await fetch(url, { cache: "no-store" });
-  if (!geoRes.ok) return null;
+    const geoRes = await fetch(url, { cache: "no-store" });
+    if (!geoRes.ok) return null;
 
-  const geojson = await geoRes.json();
-  const pt = point([lng, lat]);
+    const geojson = await geoRes.json();
+    const pt = point([lng, lat]);
 
-  for (const f of geojson?.features ?? []) {
-    if (!f?.geometry) continue;
+    for (const f of geojson?.features ?? []) {
+      if (!f?.geometry) continue;
 
-    try {
-      if (booleanPointInPolygon(pt, f)) {
-        return true;
+      try {
+        if (booleanPointInPolygon(pt, f)) {
+          return true;
+        }
+      } catch {
+        // ignore malformed geometries
       }
-    } catch {
-      // ignore malformed geometries
     }
-  }
 
-  return false;
+    return false;
+  } catch {
+    // Network/parse failure — treat smoke as unknown rather than failing the run.
+    return null;
+  }
 }
 
 export async function GET() {
   try {
+    const supabase = getSupabase();
     const { data: places, error } = await supabase
       .from("saved_places")
       .select("id, lat, lng");
@@ -95,7 +106,8 @@ export async function GET() {
       for (let i = 0; i < dates.length; i++) {
         const tempMaxF = highsC?.[i] != null ? cToF(highsC[i]) : null;
 
-        // Only fill what’s missing; don’t overwrite today’s logged smoke_present if present
+        // Only fill weather/air columns. smoke_present is intentionally omitted
+        // so an existing (previously detected) value is preserved on conflict.
         await supabase.from("daily_conditions").upsert(
           {
             place_id: p.id,
@@ -103,15 +115,24 @@ export async function GET() {
             temp_max_f: tempMaxF,
             pm25: pm25max?.[i] ?? null,
             us_aqi: aqiMax?.[i] ?? null,
-            smoke_present: null
           },
+          { onConflict: "place_id,date" }
+        );
+      }
+
+      // Record today's smoke presence from the latest NOAA polygons.
+      const smokePresent = await getSmokePresent(p.lat, p.lng);
+      if (smokePresent !== null) {
+        await supabase.from("daily_conditions").upsert(
+          { place_id: p.id, date: end, smoke_present: smokePresent },
           { onConflict: "place_id,date" }
         );
       }
     }
 
     return NextResponse.json({ ok: true, start, end, places: places?.length ?? 0 });
-  } catch (e: any) {
-    return NextResponse.json({ ok: false, error: e.message }, { status: 500 });
+  } catch (e) {
+    const message = e instanceof Error ? e.message : "Unexpected error";
+    return NextResponse.json({ ok: false, error: message }, { status: 500 });
   }
 }
