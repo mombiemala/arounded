@@ -122,6 +122,16 @@ type DailyConditionRow = {
   temp_max_f: number | null;
 };
 
+type SavedPlace = {
+  id: string;
+  label: string;
+  name: string | null;
+  lat: number;
+  lng: number;
+};
+
+const PLACE_LABEL_PRESETS = ["Home", "Work", "School", "Other"] as const;
+
 export default function MapView() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -179,6 +189,10 @@ export default function MapView() {
   const [historyStats, setHistoryStats] = useState<{ smoke7: number; smoke30: number } | null>(null);
   const [showLoginPrompt, setShowLoginPrompt] = useState(false);
   const [savingLocation, setSavingLocation] = useState(false);
+
+  const [savedPlaces, setSavedPlaces] = useState<SavedPlace[]>([]);
+  const [selectedPlaceId, setSelectedPlaceId] = useState<string | null>(null);
+  const [saveLabel, setSaveLabel] = useState("Home");
   const [copiedToast, setCopiedToast] = useState(false);
   const [initializedFromUrl, setInitializedFromUrl] = useState(false);
 
@@ -717,21 +731,37 @@ export default function MapView() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [center]);
 
-  async function fetchHistory() {
+  async function fetchSavedPlaces(selectId?: string) {
     if (!user) return;
 
-    const { data: places } = await supabaseClient
+    const { data } = await supabaseClient
       .from("saved_places")
-      .select("id,label")
-      .eq("label", "Home")
-      .limit(1);
+      .select("id,label,name,lat,lng")
+      .order("created_at", { ascending: true });
 
-    const home = places?.[0];
-    if (!home) return;
+    const places = (data ?? []) as SavedPlace[];
+    setSavedPlaces(places);
+
+    // Keep the current selection if it still exists; otherwise pick one.
+    const next =
+      selectId ??
+      (places.some((p) => p.id === selectedPlaceId) ? selectedPlaceId : null) ??
+      places[0]?.id ??
+      null;
+    setSelectedPlaceId(next);
+    if (next) fetchHistory(next);
+    else {
+      setHistory(null);
+      setHistoryStats(null);
+    }
+  }
+
+  async function fetchHistory(placeId: string) {
+    if (!user || !placeId) return;
 
     const now = new Date();
-    const d30 = new Date(now); d30.setDate(now.getDate() - 30);
     const d7 = new Date(now); d7.setDate(now.getDate() - 7);
+    const d30 = new Date(now); d30.setDate(now.getDate() - 30);
 
     const d30s = d30.toISOString().slice(0, 10);
     const d7s = d7.toISOString().slice(0, 10);
@@ -740,7 +770,7 @@ export default function MapView() {
     const { data } = await supabaseClient
       .from("daily_conditions")
       .select("date,smoke_present,us_aqi,temp_max_f")
-      .eq("place_id", home.id)
+      .eq("place_id", placeId)
       .gte("date", d30s)
       .lte("date", today)
       .order("date", { ascending: false });
@@ -753,32 +783,45 @@ export default function MapView() {
     setHistoryStats({ smoke7, smoke30 });
   }
 
+  function selectSavedPlace(place: SavedPlace) {
+    setSelectedPlaceId(place.id);
+    setSelectedPlace({
+      id: place.id,
+      place_name: place.name ?? place.label,
+      center: [place.lng, place.lat],
+    });
+    fetchHistory(place.id);
+  }
+
   async function handleSaveLocation() {
     if (!user) {
       setShowLoginPrompt(true);
       return;
     }
-
     if (!selectedPlace) return;
+
+    const label = saveLabel.trim() || "Home";
 
     setSavingLocation(true);
     try {
-      const { error } = await supabaseClient
+      const { data, error } = await supabaseClient
         .from("saved_places")
         .upsert(
           {
-            label: "Home",
+            user_id: user.id,
+            label,
+            name: selectedPlace.place_name,
             lat: center[1],
             lng: center[0],
-            name: selectedPlace.place_name,
           },
-          { onConflict: "label" }
-        );
+          { onConflict: "user_id,label" }
+        )
+        .select("id")
+        .single();
 
       if (error) throw error;
 
-      // Refresh history after saving
-      await fetchHistory();
+      await fetchSavedPlaces(data?.id);
     } catch (error) {
       console.error("Failed to save location:", error);
     } finally {
@@ -786,10 +829,26 @@ export default function MapView() {
     }
   }
 
+  async function handleDeletePlace(id: string) {
+    if (!user) return;
+    try {
+      const { error } = await supabaseClient
+        .from("saved_places")
+        .delete()
+        .eq("id", id);
+      if (error) throw error;
+      await fetchSavedPlaces();
+    } catch (error) {
+      console.error("Failed to delete place:", error);
+    }
+  }
+
   useEffect(() => {
     if (user) {
-      fetchHistory();
+      fetchSavedPlaces();
     } else {
+      setSavedPlaces([]);
+      setSelectedPlaceId(null);
       setHistory(null);
       setHistoryStats(null);
     }
@@ -1389,13 +1448,47 @@ export default function MapView() {
           <div className="opacity-70">
             Center: {center[1].toFixed(4)}, {center[0].toFixed(4)}
           </div>
-          {selectedPlace && (
+          {selectedPlace && user && (
+            <div className="mt-3 space-y-2">
+              <div className="flex gap-1 flex-wrap">
+                {PLACE_LABEL_PRESETS.map((p) => (
+                  <button
+                    key={p}
+                    onClick={() => setSaveLabel(p)}
+                    className={`px-2 py-1 rounded-full border text-xs transition-colors ${
+                      saveLabel === p
+                        ? "border-white/40 bg-white/10"
+                        : "border-white/15 hover:border-white/30"
+                    }`}
+                  >
+                    {p}
+                  </button>
+                ))}
+              </div>
+              <input
+                value={saveLabel}
+                onChange={(e) => setSaveLabel(e.target.value)}
+                placeholder="Label (e.g. Home)"
+                aria-label="Place label"
+                className="w-full rounded-lg border border-white/15 bg-white/5 px-3 py-2 text-xs outline-none placeholder:text-white/40 focus:border-white/40 transition-colors"
+              />
+              <button
+                onClick={handleSaveLocation}
+                disabled={savingLocation}
+                className="w-full px-3 py-2 text-xs border border-white/20 rounded-lg hover:border-white/40 transition-colors disabled:opacity-50"
+              >
+                {savingLocation
+                  ? "Saving..."
+                  : `Save as “${saveLabel.trim() || "Home"}”`}
+              </button>
+            </div>
+          )}
+          {selectedPlace && !user && (
             <button
               onClick={handleSaveLocation}
-              disabled={savingLocation}
-              className="mt-3 w-full px-3 py-2 text-xs border border-white/20 rounded-lg hover:border-white/40 transition-colors disabled:opacity-50"
+              className="mt-3 w-full px-3 py-2 text-xs border border-white/20 rounded-lg hover:border-white/40 transition-colors"
             >
-              {savingLocation ? "Saving..." : "Save location"}
+              Save this place
             </button>
           )}
         </div>
@@ -1423,15 +1516,52 @@ export default function MapView() {
           </div>
         )}
 
-        {user && historyStats && (
+        {user && savedPlaces.length > 0 && (
+          <div className="rounded-lg border border-white/10 bg-white/5 p-3 text-sm space-y-2">
+            <div className="font-medium">My places</div>
+            <div className="space-y-1">
+              {savedPlaces.map((p) => (
+                <div
+                  key={p.id}
+                  className={`flex items-center justify-between rounded-lg border px-2 py-1.5 transition-colors ${
+                    selectedPlaceId === p.id
+                      ? "border-white/40 bg-white/10"
+                      : "border-white/10 hover:border-white/25"
+                  }`}
+                >
+                  <button
+                    onClick={() => selectSavedPlace(p)}
+                    className="text-left flex-1 min-w-0"
+                  >
+                    <div className="text-xs font-medium">{p.label}</div>
+                    {p.name && (
+                      <div className="text-[11px] opacity-60 truncate">{p.name}</div>
+                    )}
+                  </button>
+                  <button
+                    onClick={() => handleDeletePlace(p.id)}
+                    aria-label={`Delete ${p.label}`}
+                    className="ml-2 text-sm opacity-50 hover:opacity-100 px-1 leading-none"
+                  >
+                    ×
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {user && selectedPlaceId && historyStats && (
           <div className="rounded-lg border border-white/10 bg-white/5 p-3 text-sm space-y-2">
             <div className="flex items-center justify-between">
-              <div className="font-medium">Home history</div>
+              <div className="font-medium">
+                {savedPlaces.find((p) => p.id === selectedPlaceId)?.label ?? "Place"} history
+              </div>
               <button
                 className="text-xs underline opacity-80 hover:opacity-100"
                 onClick={async () => {
                   await fetch("/api/conditions/daily-log");
-                  await fetchHistory();
+                  if (selectedPlaceId) await fetchHistory(selectedPlaceId);
                 }}
               >
                 Refresh
@@ -1460,9 +1590,9 @@ export default function MapView() {
 
         {!user && (
           <div className="rounded-lg border border-white/10 bg-white/5 p-3 text-sm">
-            <div className="font-medium mb-2">Home history</div>
+            <div className="font-medium mb-2">Saved places</div>
             <p className="text-xs opacity-70 mb-3">
-              Sign in to save places and view historical conditions.
+              Sign in to save multiple places and track historical conditions.
             </p>
             <Link
               href="/login"
