@@ -59,6 +59,8 @@ export default function Navigation() {
 
           <div className="flex items-center gap-2 sm:gap-3">
             {navLink("/map", "Explore")}
+            {navLink("/changes", "Changes")}
+            {navLink("/about", "About")}
             {navLink("/methodology", "Methodology")}
 
             {/* Optional: add Privacy/Contact once those pages exist */}

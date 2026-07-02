@@ -54,6 +54,8 @@ function pointsToFeatureCollection(
         name: d.name,
         status: d.status ?? "unknown",
         source: d.source ?? "",
+        fuel: d.fuel ?? null,
+        capacity: d.capacity ?? null,
       },
       geometry: { type: "Point", coordinates: [d.lng, d.lat] },
     })),
@@ -109,6 +111,8 @@ type PointItem = {
   lat: number;
   lng: number;
   source?: string | null;
+  fuel?: string | null;
+  capacity?: string | null;
 };
 
 type DailyConditionRow = {
@@ -139,10 +143,14 @@ export default function MapView() {
 
   const [showDataCenters, setShowDataCenters] = useState(true);
   const [showEpaFacilities, setShowEpaFacilities] = useState(false);
+  const [showPowerPlants, setShowPowerPlants] = useState(false);
+  const [showAirStations, setShowAirStations] = useState(false);
   const [showSmoke, setShowSmoke] = useState(true);
 
   const [dataCenters, setDataCenters] = useState<PointItem[]>([]);
   const [epaFacilities, setEpaFacilities] = useState<PointItem[]>([]);
+  const [powerPlants, setPowerPlants] = useState<PointItem[]>([]);
+  const [airStations, setAirStations] = useState<PointItem[]>([]);
   const [layerError, setLayerError] = useState<string | null>(null);
 
   const [smokeData, setSmokeData] = useState<GeoJSON.FeatureCollection | null>(null);
@@ -209,6 +217,8 @@ export default function MapView() {
       const layerList = layers.split(",");
       setShowDataCenters(layerList.includes("datacenters"));
       setShowEpaFacilities(layerList.includes("epa"));
+      setShowPowerPlants(layerList.includes("power"));
+      setShowAirStations(layerList.includes("air"));
       setShowSmoke(layerList.includes("smoke"));
     }
 
@@ -227,6 +237,8 @@ export default function MapView() {
     const activeLayers: string[] = [];
     if (showDataCenters) activeLayers.push("datacenters");
     if (showEpaFacilities) activeLayers.push("epa");
+    if (showPowerPlants) activeLayers.push("power");
+    if (showAirStations) activeLayers.push("air");
     if (showSmoke) activeLayers.push("smoke");
 
     if (activeLayers.length > 0) {
@@ -237,7 +249,7 @@ export default function MapView() {
 
     const newUrl = `${window.location.pathname}?${params.toString()}`;
     router.replace(newUrl, { scroll: false });
-  }, [showDataCenters, showEpaFacilities, showSmoke, initializedFromUrl, router]);
+  }, [showDataCenters, showEpaFacilities, showPowerPlants, showAirStations, showSmoke, initializedFromUrl, router]);
 
   // Sync zoom and center to URL when map moves (user interaction)
   useEffect(() => {
@@ -260,6 +272,8 @@ export default function MapView() {
         const activeLayers: string[] = [];
         if (showDataCenters) activeLayers.push("datacenters");
         if (showEpaFacilities) activeLayers.push("epa");
+        if (showPowerPlants) activeLayers.push("power");
+        if (showAirStations) activeLayers.push("air");
         if (showSmoke) activeLayers.push("smoke");
 
         if (activeLayers.length > 0) {
@@ -279,7 +293,7 @@ export default function MapView() {
       map.off("moveend", updateUrl);
       map.off("zoomend", updateUrl);
     };
-  }, [initializedFromUrl, router, showDataCenters, showEpaFacilities, showSmoke]);
+  }, [initializedFromUrl, router, showDataCenters, showEpaFacilities, showPowerPlants, showAirStations, showSmoke]);
 
   // Initialize map once
   useEffect(() => {
@@ -396,6 +410,46 @@ export default function MapView() {
       // Start with EPA hidden (toggle controls visibility)
       map.setLayoutProperty("epa-facilities-layer", "visibility", "none");
 
+      // Power plants source + layer
+      map.addSource("power-plants", {
+        type: "geojson",
+        data: { type: "FeatureCollection", features: [] },
+      });
+
+      map.addLayer({
+        id: "power-plants-layer",
+        type: "circle",
+        source: "power-plants",
+        paint: {
+          "circle-radius": 6,
+          "circle-color": "#51cf66",
+          "circle-stroke-color": "#000",
+          "circle-stroke-width": 1,
+          "circle-opacity": 0.85,
+        },
+      });
+      map.setLayoutProperty("power-plants-layer", "visibility", "none");
+
+      // Air-quality stations source + layer
+      map.addSource("air-stations", {
+        type: "geojson",
+        data: { type: "FeatureCollection", features: [] },
+      });
+
+      map.addLayer({
+        id: "air-stations-layer",
+        type: "circle",
+        source: "air-stations",
+        paint: {
+          "circle-radius": 5,
+          "circle-color": "#22b8cf",
+          "circle-stroke-color": "#000",
+          "circle-stroke-width": 1,
+          "circle-opacity": 0.85,
+        },
+      });
+      map.setLayoutProperty("air-stations-layer", "visibility", "none");
+
       map.on("click", "data-centers-layer", (e) => {
         const f = e.features?.[0];
         if (!f) return;
@@ -472,6 +526,74 @@ export default function MapView() {
         map.getCanvas().style.cursor = "pointer";
       });
       map.on("mouseleave", "epa-facilities-layer", () => {
+        map.getCanvas().style.cursor = "";
+      });
+
+      map.on("click", "power-plants-layer", (e) => {
+        const f = e.features?.[0];
+        if (!f) return;
+        const props = f.properties ?? {};
+        const coords = pointCoords(f);
+        if (!coords) return;
+
+        const detailRows = [
+          props.fuel ? `<div style="opacity:.85;">Fuel: ${escapeHtml(props.fuel)}</div>` : "",
+          props.capacity ? `<div style="opacity:.85;">Capacity: ${escapeHtml(props.capacity)}</div>` : "",
+        ].join("");
+
+        new mapboxgl.Popup({ closeButton: true })
+          .setLngLat(coords)
+          .setHTML(
+            `
+    <div style="font-size:13px; color:#fff; background:#111; padding:8px 10px; border-radius:6px; max-width:220px;">
+      <div style="font-weight:600; margin-bottom:4px;">
+        ${props.name ? escapeHtml(props.name) : "Power plant"}
+      </div>
+      ${detailRows}
+      <div style="opacity:.6; font-size:11px; margin-top:4px;">
+        Source: ${props.source ? escapeHtml(props.source) : "OpenStreetMap"}
+      </div>
+    </div>
+    `
+          )
+          .addTo(map);
+      });
+
+      map.on("mouseenter", "power-plants-layer", () => {
+        map.getCanvas().style.cursor = "pointer";
+      });
+      map.on("mouseleave", "power-plants-layer", () => {
+        map.getCanvas().style.cursor = "";
+      });
+
+      map.on("click", "air-stations-layer", (e) => {
+        const f = e.features?.[0];
+        if (!f) return;
+        const props = f.properties ?? {};
+        const coords = pointCoords(f);
+        if (!coords) return;
+
+        new mapboxgl.Popup({ closeButton: true })
+          .setLngLat(coords)
+          .setHTML(
+            `
+    <div style="font-size:13px; color:#fff; background:#111; padding:8px 10px; border-radius:6px; max-width:220px;">
+      <div style="font-weight:600; margin-bottom:4px;">
+        ${props.name ? escapeHtml(props.name) : "Monitoring station"}
+      </div>
+      <div style="opacity:.6; font-size:11px;">
+        Source: ${props.source ? escapeHtml(props.source) : "OpenAQ"}
+      </div>
+    </div>
+    `
+          )
+          .addTo(map);
+      });
+
+      map.on("mouseenter", "air-stations-layer", () => {
+        map.getCanvas().style.cursor = "pointer";
+      });
+      map.on("mouseleave", "air-stations-layer", () => {
         map.getCanvas().style.cursor = "";
       });
 
@@ -568,7 +690,7 @@ export default function MapView() {
     if (!mapRef.current) return;
     fetchLayersWithinRadius(center, radiusMiles);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [center, radiusMiles, showDataCenters, showEpaFacilities]);
+  }, [center, radiusMiles, showDataCenters, showEpaFacilities, showPowerPlants, showAirStations]);
 
   useEffect(() => {
     const run = async () => {
@@ -706,6 +828,38 @@ export default function MapView() {
     );
   }, [epaFacilities, showEpaFacilities]);
 
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !map.isStyleLoaded()) return;
+
+    const source = map.getSource("power-plants") as mapboxgl.GeoJSONSource | undefined;
+    if (!source) return;
+
+    source.setData(pointsToFeatureCollection(powerPlants));
+
+    map.setLayoutProperty(
+      "power-plants-layer",
+      "visibility",
+      showPowerPlants ? "visible" : "none"
+    );
+  }, [powerPlants, showPowerPlants]);
+
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !map.isStyleLoaded()) return;
+
+    const source = map.getSource("air-stations") as mapboxgl.GeoJSONSource | undefined;
+    if (!source) return;
+
+    source.setData(pointsToFeatureCollection(airStations));
+
+    map.setLayoutProperty(
+      "air-stations-layer",
+      "visibility",
+      showAirStations ? "visible" : "none"
+    );
+  }, [airStations, showAirStations]);
+
   // Fetch the latest NOAA daily smoke GeoJSON once on mount
   useEffect(() => {
     let cancelled = false;
@@ -832,22 +986,58 @@ export default function MapView() {
         setDataCenters([]);
       }
 
+      // On-demand layers are proxied per view (the national datasets are far
+      // too large to mirror). Each is guarded independently so one failing
+      // layer doesn't blank the others.
       if (showEpaFacilities) {
-        // EPA facilities are queried on demand from the FRS proxy route rather
-        // than a stored table (the national dataset is far too large to mirror).
-        const res = await fetch(
-          `/api/facilities/nearby?lat=${lat}&lng=${lng}&radius=${miles}`
+        setEpaFacilities(
+          await fetchNearby("/api/facilities/nearby", lat, lng, miles, "facilities")
         );
-        const json = await res.json();
-        if (!res.ok || !json.ok) {
-          throw new Error(json?.error ?? "Failed to load EPA facilities");
-        }
-        setEpaFacilities((json.facilities ?? []) as PointItem[]);
       } else {
         setEpaFacilities([]);
       }
+
+      if (showPowerPlants) {
+        setPowerPlants(
+          await fetchNearby("/api/power-plants/nearby", lat, lng, miles, "plants")
+        );
+      } else {
+        setPowerPlants([]);
+      }
+
+      if (showAirStations) {
+        // Silent on failure: this layer no-ops until OPENAQ_API_KEY is set.
+        setAirStations(
+          await fetchNearby("/api/air-stations/nearby", lat, lng, miles, "stations", true)
+        );
+      } else {
+        setAirStations([]);
+      }
     } catch (e) {
       setLayerError(e instanceof Error ? e.message : "Failed to load map layers");
+    }
+  }
+
+  async function fetchNearby(
+    path: string,
+    lat: number,
+    lng: number,
+    miles: number,
+    key: "facilities" | "plants" | "stations",
+    silent = false
+  ): Promise<PointItem[]> {
+    try {
+      const res = await fetch(`${path}?lat=${lat}&lng=${lng}&radius=${miles}`);
+      const json = await res.json();
+      if (!res.ok || !json.ok) {
+        throw new Error(json?.error ?? "Request failed");
+      }
+      return (json[key] ?? []) as PointItem[];
+    } catch (e) {
+      if (!silent) {
+        setLayerError(e instanceof Error ? e.message : "Failed to load a map layer");
+      }
+      return [];
     }
   }
 
@@ -1061,6 +1251,30 @@ export default function MapView() {
 
           <label className="flex items-center justify-between rounded-lg border border-white/10 bg-white/5 px-3 py-2 cursor-pointer">
             <span className="text-sm flex items-center gap-2">
+              <span className="inline-block w-2.5 h-2.5 rounded-full" style={{ background: "#51cf66" }} />
+              Power plants
+            </span>
+            <input
+              type="checkbox"
+              checked={showPowerPlants}
+              onChange={(e) => setShowPowerPlants(e.target.checked)}
+            />
+          </label>
+
+          <label className="flex items-center justify-between rounded-lg border border-white/10 bg-white/5 px-3 py-2 cursor-pointer">
+            <span className="text-sm flex items-center gap-2">
+              <span className="inline-block w-2.5 h-2.5 rounded-full" style={{ background: "#22b8cf" }} />
+              Air-quality stations
+            </span>
+            <input
+              type="checkbox"
+              checked={showAirStations}
+              onChange={(e) => setShowAirStations(e.target.checked)}
+            />
+          </label>
+
+          <label className="flex items-center justify-between rounded-lg border border-white/10 bg-white/5 px-3 py-2 cursor-pointer">
+            <span className="text-sm flex items-center gap-2">
               <span className="inline-block w-2.5 h-2.5 rounded-full" style={{ background: "#ffa94d" }} />
               Smoke
             </span>
@@ -1083,7 +1297,10 @@ export default function MapView() {
           {layerError && <div className="text-xs text-red-600">{layerError}</div>}
 
           <div className="text-xs opacity-70">
-            Loaded: {dataCenters.length} data centers, {epaFacilities.length} EPA facilities
+            Loaded: {dataCenters.length} data centers
+            {showEpaFacilities ? `, ${epaFacilities.length} EPA facilities` : ""}
+            {showPowerPlants ? `, ${powerPlants.length} power plants` : ""}
+            {showAirStations ? `, ${airStations.length} air stations` : ""}
           </div>
         </div>
 
