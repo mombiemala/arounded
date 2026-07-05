@@ -4,7 +4,7 @@ import SourceLink from "@/src/components/SourceLink";
 
 const card = "border border-white/10 rounded-xl p-6 bg-white/5";
 const callout = "border border-white/15 rounded-xl p-6 bg-white/5";
-const LAST_UPDATED = "January 2026";
+const LAST_UPDATED = "July 2026";
 
 export default function MethodologyPage() {
   return (
@@ -43,9 +43,27 @@ export default function MethodologyPage() {
                   </div>
                 </div>
                 <div className="rounded-lg border border-white/10 bg-black/30 p-4">
-                  <div className="font-semibold">Facilities</div>
+                  <div className="font-semibold">EPA facilities</div>
                   <div className="opacity-75">
-                    <SourceLink href="https://www.epa.gov/frs" label="EPA" /> datasets (layer-dependent)
+                    <SourceLink href="https://www.epa.gov/frs" label="EPA FRS" /> radial search (on demand)
+                  </div>
+                </div>
+                <div className="rounded-lg border border-white/10 bg-black/30 p-4">
+                  <div className="font-semibold">Data centers</div>
+                  <div className="opacity-75">
+                    <SourceLink href="https://www.peeringdb.com/" label="PeeringDB" /> facility records
+                  </div>
+                </div>
+                <div className="rounded-lg border border-white/10 bg-black/30 p-4">
+                  <div className="font-semibold">Power plants</div>
+                  <div className="opacity-75">
+                    <SourceLink href="https://www.openstreetmap.org/" label="OpenStreetMap" /> (via Overpass)
+                  </div>
+                </div>
+                <div className="rounded-lg border border-white/10 bg-black/30 p-4">
+                  <div className="font-semibold">Air-quality stations</div>
+                  <div className="opacity-75">
+                    <SourceLink href="https://openaq.org/" label="OpenAQ" /> monitoring locations
                   </div>
                 </div>
                 <div className="rounded-lg border border-white/10 bg-black/30 p-4">
@@ -159,39 +177,86 @@ export default function MethodologyPage() {
             </div>
           </section>
 
-          {/* Facilities & Data Centers */}
+          {/* Nearby infrastructure layers */}
           <section className="mb-12">
-            <h2 className="text-2xl font-bold mb-4">Facilities & data centers</h2>
+            <h2 className="text-2xl font-bold mb-4">Nearby infrastructure</h2>
             <div className="space-y-4 opacity-90 leading-relaxed">
               <div className={card}>
+                <p className="font-semibold mb-1">EPA facilities</p>
                 <p className="text-sm opacity-70 mb-2">
                   Source: <SourceLink href="https://www.epa.gov/frs" label="EPA Facility Registry Service (FRS)" />
                 </p>
                 <p className="text-sm opacity-90 leading-relaxed">
-                  Facility locations come from <SourceLink href="https://www.epa.gov/frs" label="EPA" /> datasets (coverage depends on the layer). These
-                  may include regulated facilities, monitoring sites, and other environmental
-                  infrastructure. We display locations and basic attributes provided in the source
-                  data.
+                  Regulated and monitored facilities are queried on demand from the <SourceLink href="https://www.epa.gov/frs" label="EPA FRS" /> radial
+                  search API around the area you&apos;re viewing, rather than mirrored — the national
+                  registry is far too large to store. We show locations and basic attributes from the
+                  source data.
                 </p>
                 <p className="text-xs opacity-60 mt-3">
-                  Notes: <SourceLink href="https://www.epa.gov/frs" label="EPA" /> datasets can lag real-world changes (openings/closures) and records may
-                  be incomplete in some areas.
+                  Notes: <SourceLink href="https://www.epa.gov/frs" label="EPA" /> records can lag real-world openings/closures and may be incomplete in
+                  some areas.
                 </p>
               </div>
 
               <div className={card}>
+                <p className="font-semibold mb-1">Data centers</p>
                 <p className="text-sm opacity-70 mb-2">
-                  Compiled from multiple public sources. Coverage varies by region.
+                  Source: <SourceLink href="https://www.peeringdb.com/" label="PeeringDB" /> facility records
                 </p>
                 <p className="text-sm opacity-90 leading-relaxed">
-                  Arounded highlights data center locations as a focused infrastructure layer. Data
-                  center records may come from a mix of public datasets and maintained listings,
-                  depending on what's available for a region.
+                  Colocation and interconnection facilities come from <SourceLink href="https://www.peeringdb.com/" label="PeeringDB" />, a community-maintained,
+                  openly available database. We refresh the layer weekly and keep records tagged by
+                  source so it&apos;s always clear where a point came from.
                 </p>
                 <p className="text-xs opacity-60 mt-3">
-                  Notes: "Data center" can mean different things (hyperscale vs. smaller facilities).
-                  If you're using this for advocacy or planning, we recommend verifying a specific
-                  site through local permitting, zoning, or operator documentation.
+                  Notes: &quot;Data center&quot; covers a wide range (hyperscale to small facilities), and
+                  PeeringDB focuses on interconnection sites. For planning or advocacy, verify a
+                  specific site through local permitting, zoning, or operator documentation.
+                </p>
+              </div>
+
+              <div className={card}>
+                <p className="font-semibold mb-1">Power plants</p>
+                <p className="text-sm opacity-70 mb-2">
+                  Source: <SourceLink href="https://www.openstreetmap.org/" label="OpenStreetMap" /> (via the Overpass API)
+                </p>
+                <p className="text-sm opacity-90 leading-relaxed">
+                  Power generation facilities are queried on demand from <SourceLink href="https://www.openstreetmap.org/" label="OpenStreetMap" /> for the area
+                  you&apos;re viewing, including fuel type and capacity where contributors have tagged
+                  them.
+                </p>
+                <p className="text-xs opacity-60 mt-3">
+                  Notes: OpenStreetMap is crowd-sourced, so coverage and detail vary by region.
+                </p>
+              </div>
+
+              <div className={card}>
+                <p className="font-semibold mb-1">Air-quality stations</p>
+                <p className="text-sm opacity-70 mb-2">
+                  Source: <SourceLink href="https://openaq.org/" label="OpenAQ" /> monitoring locations
+                </p>
+                <p className="text-sm opacity-90 leading-relaxed">
+                  Physical air-quality monitoring stations are queried on demand from <SourceLink href="https://openaq.org/" label="OpenAQ" />, which
+                  aggregates government and research monitors. This complements the modeled air-quality
+                  values shown in the conditions panel with the locations of real-world sensors.
+                </p>
+              </div>
+            </div>
+          </section>
+
+          {/* Change tracking */}
+          <section className="mb-12">
+            <h2 className="text-2xl font-bold mb-4">Change tracking</h2>
+            <div className={card}>
+              <div className="space-y-3 opacity-90 leading-relaxed text-sm">
+                <p>
+                  As datasets refresh, Arounded records when facilities appear or disappear so you can
+                  see how an area is changing, not just its current state. Those events are summarized
+                  in plain language on the{" "}
+                  <Link href="/changes" className="underline hover:opacity-80">
+                    change log
+                  </Link>
+                  .
                 </p>
               </div>
             </div>
@@ -210,10 +275,13 @@ export default function MethodologyPage() {
                   <strong>Saved place history:</strong> logged once per day for your saved places
                 </li>
                 <li>
-                  <strong>Facilities:</strong> updated when source datasets refresh (varies by dataset)
+                  <strong>Data centers:</strong> refreshed weekly from <SourceLink href="https://www.peeringdb.com/" label="PeeringDB" />
                 </li>
                 <li>
-                  <strong>Air + weather:</strong> fetched on demand when you view a location (<SourceLink href="https://open-meteo.com/en/docs" label="Open-Meteo" />)
+                  <strong>EPA facilities, power plants, air-quality stations:</strong> fetched on demand for the area you&apos;re viewing
+                </li>
+                <li>
+                  <strong>Air + weather conditions:</strong> fetched on demand when you view a location (<SourceLink href="https://open-meteo.com/en/docs" label="Open-Meteo" />)
                 </li>
               </ul>
             </div>
@@ -274,6 +342,40 @@ export default function MethodologyPage() {
                   If you have health concerns related to smoke or air quality, follow guidance from a healthcare professional
                   and official public health agencies.
                 </p>
+              </div>
+            </div>
+          </section>
+
+          {/* Sources & attribution */}
+          <section className="mb-12">
+            <h2 className="text-2xl font-bold mb-4">Sources &amp; attribution</h2>
+            <div className={card}>
+              <div className="space-y-3 opacity-90 leading-relaxed text-sm">
+                <p>
+                  Arounded is built on public and openly-licensed data. We credit each source and
+                  respect its license:
+                </p>
+                <ul className="list-disc list-inside space-y-2 ml-1">
+                  <li>
+                    <SourceLink href="https://www.openstreetmap.org/copyright" label="OpenStreetMap" /> contributors — power plants and related features.
+                    Data is © OpenStreetMap contributors, available under the{" "}
+                    <SourceLink href="https://opendatacommons.org/licenses/odbl/" label="Open Database License (ODbL)" />.
+                  </li>
+                  <li>
+                    <SourceLink href="https://openaq.org/" label="OpenAQ" /> — air-quality monitoring station locations.
+                  </li>
+                  <li>
+                    <SourceLink href="https://www.peeringdb.com/" label="PeeringDB" /> — data center / interconnection facility records.
+                  </li>
+                  <li>
+                    <SourceLink href="https://www.ospo.noaa.gov/Products/land/hms.html" label="NOAA HMS" />,{" "}
+                    <SourceLink href="https://www.epa.gov/frs" label="EPA FRS" />, and{" "}
+                    <SourceLink href="https://open-meteo.com/en/docs" label="Open-Meteo" /> — smoke, facilities, and weather/air data.
+                  </li>
+                  <li>
+                    <SourceLink href="https://www.mapbox.com/" label="Mapbox" /> — base map tiles and geocoding.
+                  </li>
+                </ul>
               </div>
             </div>
           </section>
