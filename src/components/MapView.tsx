@@ -22,6 +22,16 @@ function milesToKm(miles: number) {
   return miles * 1.609344;
 }
 
+// US EPA AQI categories — used to make the raw AQI number readable at a glance.
+function aqiCategory(aqi: number): { label: string; color: string } {
+  if (aqi <= 50) return { label: "Good", color: "#51cf66" };
+  if (aqi <= 100) return { label: "Moderate", color: "#ffd43b" };
+  if (aqi <= 150) return { label: "Unhealthy (sensitive)", color: "#ffa94d" };
+  if (aqi <= 200) return { label: "Unhealthy", color: "#ff6b6b" };
+  if (aqi <= 300) return { label: "Very unhealthy", color: "#cc5de8" };
+  return { label: "Hazardous", color: "#e64980" };
+}
+
 // Escape values before interpolating into popup HTML (defense against markup
 // sneaking in through dataset fields).
 function escapeHtml(value: unknown): string {
@@ -138,6 +148,7 @@ export default function MapView() {
   const mapContainerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<mapboxgl.Map | null>(null);
   const skipSearchRef = useRef(false);
+  const geoTriedRef = useRef(false);
 
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<GeocodeFeature[]>([]);
@@ -238,6 +249,31 @@ export default function MapView() {
 
     setInitializedFromUrl(true);
   }, [searchParams, initializedFromUrl]);
+
+  // On first load, center on the visitor's location — unless the URL already
+  // specifies a place or one is selected. Falls back silently to the default.
+  useEffect(() => {
+    if (!initializedFromUrl || geoTriedRef.current) return;
+    geoTriedRef.current = true;
+
+    const hasUrlLocation = searchParams.get("lat") && searchParams.get("lng");
+    if (hasUrlLocation || selectedPlace) return;
+    if (typeof navigator === "undefined" || !navigator.geolocation) return;
+
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        setSelectedPlace({
+          id: "geo",
+          place_name: "Your location",
+          center: [pos.coords.longitude, pos.coords.latitude],
+        });
+      },
+      () => {
+        // Permission denied or unavailable — keep the default view.
+      },
+      { timeout: 8000 }
+    );
+  }, [initializedFromUrl, searchParams, selectedPlace]);
 
   const center = useMemo<[number, number]>(() => {
     return selectedPlace?.center ?? DEFAULT_CENTER;
@@ -821,7 +857,16 @@ export default function MapView() {
 
       if (error) throw error;
 
-      await fetchSavedPlaces(data?.id);
+      const newId = data?.id;
+      await fetchSavedPlaces(newId);
+
+      // Backfill ~30 days of conditions so the new place has history right away
+      // instead of waiting for the daily cron. Best-effort, in the background.
+      if (newId) {
+        fetch("/api/conditions/daily-log")
+          .then(() => fetchHistory(newId))
+          .catch(() => {});
+      }
     } catch (error) {
       console.error("Failed to save location:", error);
     } finally {
@@ -1210,9 +1255,9 @@ export default function MapView() {
   }
 
   return (
-    <div className="w-full min-h-[calc(100vh-64px)] flex">
-      {/* Left panel */}
-      <div className="w-full max-w-md border-r border-white/10 p-4 space-y-4 overflow-y-auto max-h-[calc(100vh-64px)]">
+    <div className="w-full lg:min-h-[calc(100vh-64px)] flex flex-col lg:flex-row">
+      {/* Left panel (below the map on mobile, beside it on desktop) */}
+      <div className="w-full lg:max-w-md border-b lg:border-b-0 lg:border-r border-white/10 p-4 space-y-4 lg:overflow-y-auto lg:max-h-[calc(100vh-64px)] order-2 lg:order-1">
         <div>
           <div className="text-xl font-semibold">Arounded</div>
           <div className="text-sm opacity-70">Search a place, set a radius, explore layers.</div>
@@ -1397,8 +1442,23 @@ export default function MapView() {
 
                 <div className="border-t border-white/10 pt-2 flex items-center justify-between">
                   <div className="opacity-80">Air</div>
-                  <div>
-                    {air?.usAqi != null ? `AQI ${Math.round(air.usAqi)}` : air?.pm25 != null ? `PM2.5 ${air.pm25}` : "—"}
+                  <div className="text-right">
+                    {air?.usAqi != null ? (
+                      <div className="flex items-center gap-2 justify-end">
+                        <span
+                          className="inline-block w-2.5 h-2.5 rounded-full"
+                          style={{ background: aqiCategory(air.usAqi).color }}
+                        />
+                        <span>AQI {Math.round(air.usAqi)}</span>
+                        <span className="opacity-60 text-xs">
+                          {aqiCategory(air.usAqi).label}
+                        </span>
+                      </div>
+                    ) : air?.pm25 != null ? (
+                      `PM2.5 ${air.pm25}`
+                    ) : (
+                      "—"
+                    )}
                   </div>
                 </div>
 
@@ -1605,8 +1665,8 @@ export default function MapView() {
 
       </div>
 
-      {/* Map */}
-      <div className="flex-1 relative">
+      {/* Map (full width on top on mobile, fills the right side on desktop) */}
+      <div className="relative w-full h-[60vh] lg:h-auto lg:flex-1 order-1 lg:order-2">
         <div ref={mapContainerRef} className="w-full h-full" />
         
         {/* Copied Toast */}
