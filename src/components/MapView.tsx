@@ -1656,7 +1656,7 @@ export default function MapView() {
             <div className="flex gap-2">
               <Link
                 href="/login"
-                className="flex-1 px-4 py-2 bg-white text-black rounded-lg font-medium hover:bg-white/90 transition-colors text-center text-sm"
+                className="flex-1 px-4 py-2 bg-brand text-brand-ink rounded-lg font-medium hover:bg-brand-strong transition-colors text-center text-sm"
               >
                 Sign in
               </Link>
@@ -1799,7 +1799,7 @@ export default function MapView() {
             </p>
             <Link
               href="/login"
-              className="inline-block px-4 py-2 bg-white text-black rounded-lg font-medium hover:bg-white/90 transition-colors text-xs"
+              className="inline-block px-4 py-2 bg-brand text-brand-ink rounded-lg font-medium hover:bg-brand-strong transition-colors text-xs"
             >
               Sign in
             </Link>
@@ -1815,7 +1815,7 @@ export default function MapView() {
         
         {/* Copied Toast */}
         {copiedToast && (
-          <div className="absolute top-4 right-4 bg-white text-black px-4 py-2 rounded-lg shadow-lg text-sm font-medium z-50">
+          <div className="absolute top-4 right-4 bg-brand text-brand-ink px-4 py-2 rounded-lg shadow-lg text-sm font-medium z-50">
             Copied!
           </div>
         )}

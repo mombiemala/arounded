@@ -6,7 +6,7 @@ const card = "border border-white/10 rounded-xl p-6 bg-white/5";
 
 export default function AboutPage() {
   return (
-    <div className="min-h-screen bg-black text-white">
+    <div className="min-h-screen bg-ground text-white">
       <Navigation />
 
       <section className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
@@ -118,7 +118,7 @@ export default function AboutPage() {
           <div className="flex flex-col sm:flex-row gap-4">
             <Link
               href="/map"
-              className="px-6 py-3 bg-white text-black rounded-lg font-medium hover:bg-white/90 transition-colors text-center"
+              className="px-6 py-3 bg-brand text-brand-ink rounded-lg font-medium hover:bg-brand-strong transition-colors text-center"
             >
               Explore the map
             </Link>

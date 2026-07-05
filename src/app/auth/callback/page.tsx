@@ -35,7 +35,7 @@ function AuthCallbackContent() {
   }, [params, router, supabase]);
 
   return (
-    <div className="min-h-screen bg-black text-white flex items-center justify-center px-4">
+    <div className="min-h-screen bg-ground text-white flex items-center justify-center px-4">
       <div className="max-w-sm text-center">
         <h1 className="text-2xl font-semibold mb-3">Signing you in</h1>
         <p className="text-sm opacity-75 leading-relaxed">
@@ -53,7 +53,7 @@ function AuthCallbackContent() {
 export default function AuthCallbackPage() {
   return (
     <Suspense fallback={
-      <div className="min-h-screen bg-black text-white flex items-center justify-center px-4">
+      <div className="min-h-screen bg-ground text-white flex items-center justify-center px-4">
         <div className="max-w-sm text-center">
           <h1 className="text-2xl font-semibold mb-3">Signing you in</h1>
           <p className="text-sm opacity-75 leading-relaxed">

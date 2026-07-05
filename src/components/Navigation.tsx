@@ -42,7 +42,7 @@ export default function Navigation() {
         href={href}
         className={[
           "text-sm transition-colors rounded-lg px-3 py-2",
-          active ? "bg-white/10 text-white" : "text-white/80 hover:text-white hover:bg-white/5",
+          active ? "bg-brand/15 text-brand" : "text-white/80 hover:text-white hover:bg-white/5",
         ].join(" ")}
       >
         {label}
@@ -51,10 +51,11 @@ export default function Navigation() {
   };
 
   return (
-    <nav className="border-b border-white/10 bg-black/80 backdrop-blur-sm sticky top-0 z-50">
+    <nav className="border-b border-white/10 bg-ground/80 backdrop-blur-sm sticky top-0 z-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
-          <Link href="/" className="text-xl font-semibold tracking-tight">
+          <Link href="/" className="text-xl font-semibold tracking-tight flex items-center gap-2">
+            <span className="inline-block w-2.5 h-2.5 rounded-full bg-brand" />
             Arounded
           </Link>
 
@@ -96,7 +97,7 @@ export default function Navigation() {
 
                   {showUserMenu && (
                     <div
-                      className="absolute right-0 mt-2 w-56 border border-white/10 rounded-xl bg-black/95 backdrop-blur-sm shadow-lg overflow-hidden"
+                      className="absolute right-0 mt-2 w-56 border border-white/10 rounded-xl bg-ground/95 backdrop-blur-sm shadow-lg overflow-hidden"
                       role="menu"
                     >
                       <div className="p-3 border-b border-white/10">

@@ -13,8 +13,9 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Arounded - Understand your environment",
-  description: "Explore air quality, weather conditions, and environmental facilities around any location. Track smoke, pollution, and climate data.",
+  title: "Arounded — See what's moving in around you",
+  description:
+    "A free, transparent map of what surrounds the places you care about — data centers, facilities, power, air quality and wildfire smoke — and how it's changing over time.",
 };
 
 export default function RootLayout({
