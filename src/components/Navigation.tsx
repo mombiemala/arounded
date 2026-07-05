@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useAuth } from "@/lib/useAuth";
 import { useEffect, useRef, useState } from "react";
 import { usePathname } from "next/navigation";
+import NotificationsBell from "@/src/components/NotificationsBell";
 
 export default function Navigation() {
   const { user, signOut } = useAuth();
@@ -63,10 +64,9 @@ export default function Navigation() {
             {navLink("/changes", "Changes")}
             {navLink("/about", "About")}
 
-            {/* Optional: add Privacy/Contact once those pages exist */}
-            {/* {navLink("/privacy", "Privacy")} */}
+            {user && <NotificationsBell />}
 
-            <div className="ml-2 sm:ml-3">
+            <div className="ml-1 sm:ml-2">
               {user ? (
                 <div className="relative" ref={menuRef}>
                   <button
