@@ -33,6 +33,7 @@ export default function NotificationsBell() {
   const supabase = createBrowserClient();
 
   const [items, setItems] = useState<Notification[]>([]);
+  const [emailAlerts, setEmailAlerts] = useState(true);
   const [open, setOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement | null>(null);
 
@@ -42,17 +43,34 @@ export default function NotificationsBell() {
     if (!user) return;
     let cancelled = false;
     (async () => {
-      const { data } = await supabase
-        .from("notifications")
-        .select("id,title,body,link,read_at,created_at")
-        .order("created_at", { ascending: false })
-        .limit(20);
-      if (!cancelled) setItems((data ?? []) as Notification[]);
+      const [notifs, prefs] = await Promise.all([
+        supabase
+          .from("notifications")
+          .select("id,title,body,link,read_at,created_at")
+          .order("created_at", { ascending: false })
+          .limit(20),
+        supabase.from("user_settings").select("email_alerts").maybeSingle(),
+      ]);
+      if (cancelled) return;
+      setItems((notifs.data ?? []) as Notification[]);
+      if (prefs.data) setEmailAlerts(prefs.data.email_alerts !== false);
     })();
     return () => {
       cancelled = true;
     };
   }, [user, supabase]);
+
+  const toggleEmailAlerts = async () => {
+    if (!user) return;
+    const next = !emailAlerts;
+    setEmailAlerts(next);
+    await supabase
+      .from("user_settings")
+      .upsert(
+        { user_id: user.id, email_alerts: next, updated_at: new Date().toISOString() },
+        { onConflict: "user_id" }
+      );
+  };
 
   // Close on outside click / Escape.
   useEffect(() => {
@@ -158,6 +176,16 @@ export default function NotificationsBell() {
               ))}
             </div>
           )}
+
+          <label className="flex items-center justify-between gap-3 px-3 py-2.5 border-t border-white/10 cursor-pointer">
+            <span className="text-xs opacity-80">Email me about nearby changes</span>
+            <input
+              type="checkbox"
+              checked={emailAlerts}
+              onChange={toggleEmailAlerts}
+              className="shrink-0"
+            />
+          </label>
         </div>
       )}
     </div>
