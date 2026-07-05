@@ -248,10 +248,11 @@ export default function HomePage() {
           <div className={card}>
             <h3 className="font-semibold mb-1">Data centers</h3>
             <p className="text-sm opacity-70">
-              Source: <SourceLink href="https://www.peeringdb.com/" label="PeeringDB" />
+              Source: <SourceLink href="https://www.fractracker.org/data-centers/" label="FracTracker Alliance" />
             </p>
             <p className="text-sm opacity-80 mt-3 leading-relaxed">
-              Colocation &amp; interconnection facilities from PeeringDB&apos;s open database, refreshed weekly.
+              Proposed, under-construction, and operating data centers — with operator, power
+              demand, and cooling — color-coded by status. Refreshed weekly.
             </p>
           </div>
 

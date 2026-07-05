@@ -52,6 +52,17 @@ function pointCoords(
     : null;
 }
 
+function dcStatus(status: unknown): { label: string; color: string } {
+  switch (status) {
+    case "proposed": return { label: "Proposed", color: "#ffd43b" };
+    case "construction": return { label: "Under construction", color: "#ffa94d" };
+    case "expanding": return { label: "Expanding", color: "#ffa94d" };
+    case "cancelled": return { label: "Cancelled", color: "#868e96" };
+    case "operational": return { label: "Operating", color: "#ff6b6b" };
+    default: return { label: "Unknown", color: "#ff6b6b" };
+  }
+}
+
 function pointsToFeatureCollection(
   items: PointItem[]
 ): GeoJSON.FeatureCollection<GeoJSON.Point> {
@@ -66,6 +77,7 @@ function pointsToFeatureCollection(
         source: d.source ?? "",
         fuel: d.fuel ?? null,
         capacity: d.capacity ?? null,
+        notes: d.notes ?? null,
       },
       geometry: { type: "Point", coordinates: [d.lng, d.lat] },
     })),
@@ -124,6 +136,7 @@ type PointItem = {
   source?: string | null;
   fuel?: string | null;
   capacity?: string | null;
+  notes?: string | null;
 };
 
 type DailyConditionRow = {
@@ -432,7 +445,17 @@ export default function MapView() {
         source: "data-centers",
         paint: {
           "circle-radius": 6,
-          "circle-color": "#ff6b6b",
+          // Color by project status — the whole point of the layer.
+          "circle-color": [
+            "match",
+            ["get", "status"],
+            "proposed", "#ffd43b",
+            "construction", "#ffa94d",
+            "expanding", "#ffa94d",
+            "cancelled", "#868e96",
+            "operational", "#ff6b6b",
+            "#ff6b6b",
+          ],
           "circle-stroke-color": "#000",
           "circle-stroke-width": 1,
           "circle-opacity": 0.9,
@@ -508,25 +531,25 @@ export default function MapView() {
         const coords = pointCoords(f);
         if (!coords) return;
 
+        const st = dcStatus(props.status);
+        const notes = props.notes
+          ? `<div style="opacity:.8; font-size:12px; margin-top:6px; line-height:1.5;">${escapeHtml(props.notes)}</div>`
+          : "";
+
         new mapboxgl.Popup({ closeButton: true })
           .setLngLat(coords)
           .setHTML(
             `
-    <div style="
-      font-size:13px;
-      color:#fff;
-      background:#111;
-      padding:8px 10px;
-      border-radius:6px;
-      max-width:220px;
-    ">
-      <div style="font-weight:600; margin-bottom:4px;">
-        ${props.name ? escapeHtml(props.name) : "Data Center"}
+    <div style="font-size:13px; color:#fff; background:#111; padding:8px 10px; border-radius:6px; max-width:240px;">
+      <div style="font-weight:600; margin-bottom:6px;">
+        ${props.name ? escapeHtml(props.name) : "Data center"}
       </div>
-      <div style="opacity:.85;">
-        Status: ${props.status ? escapeHtml(props.status) : "unknown"}
+      <div style="display:inline-flex; align-items:center; gap:6px; font-size:12px;">
+        <span style="display:inline-block; width:8px; height:8px; border-radius:9999px; background:${st.color};"></span>
+        ${st.label}
       </div>
-      <div style="opacity:.6; font-size:11px; margin-top:4px;">
+      ${notes}
+      <div style="opacity:.55; font-size:11px; margin-top:6px;">
         Source: ${props.source ? escapeHtml(props.source) : "—"}
       </div>
     </div>
@@ -1078,7 +1101,7 @@ export default function MapView() {
       if (showDataCenters) {
         const { data, error } = await supabase
           .from("data_centers")
-          .select("id,name,status,lat,lng,source")
+          .select("id,name,status,lat,lng,source,notes")
           .gte("lat", lat - latDelta)
           .lte("lat", lat + latDelta)
           .gte("lng", lng - lngDelta)
@@ -1341,6 +1364,22 @@ export default function MapView() {
               onChange={(e) => setShowDataCenters(e.target.checked)}
             />
           </label>
+
+          {showDataCenters && (
+            <div className="flex flex-wrap gap-x-3 gap-y-1 px-1 text-[11px] opacity-70">
+              {[
+                { c: "#ff6b6b", l: "Operating" },
+                { c: "#ffa94d", l: "Under construction" },
+                { c: "#ffd43b", l: "Proposed" },
+                { c: "#868e96", l: "Cancelled" },
+              ].map((s) => (
+                <span key={s.l} className="inline-flex items-center gap-1">
+                  <span className="inline-block w-2 h-2 rounded-full" style={{ background: s.c }} />
+                  {s.l}
+                </span>
+              ))}
+            </div>
+          )}
 
           <label className="flex items-center justify-between rounded-lg border border-white/10 bg-white/5 px-3 py-2 cursor-pointer">
             <span className="text-sm flex items-center gap-2">

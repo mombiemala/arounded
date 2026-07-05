@@ -60,8 +60,8 @@ export default function AboutPage() {
               <div className={card}>
                 <h3 className="font-semibold mb-1">Data centers</h3>
                 <p className="text-sm opacity-80">
-                  Colocation &amp; interconnection facilities from{" "}
-                  <SourceLink href="https://www.peeringdb.com/" label="PeeringDB" />.
+                  Proposed &amp; operating sites, by status, from{" "}
+                  <SourceLink href="https://www.fractracker.org/data-centers/" label="FracTracker" />.
                 </p>
               </div>
               <div className={card}>
