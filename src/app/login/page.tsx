@@ -95,8 +95,8 @@ export default function LoginPage() {
         <div className="border border-white/10 rounded-xl p-8 bg-white/5 shadow-sm">
           <h1 className="text-3xl font-bold mb-2">Sign in</h1>
           <p className="text-sm opacity-75 mb-6 leading-relaxed">
-            The map is free without an account. Sign in only if you want to save places
-            and track history over time.
+            The map is free — no account needed. Sign in only to save your places, see their
+            history, and get alerts when something new is proposed nearby.
           </p>
 
           {message && (

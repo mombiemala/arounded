@@ -57,17 +57,16 @@ export default async function ChangesPage() {
       <Navigation />
 
       <section className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-        <h1 className="text-4xl font-bold mb-3">Change log</h1>
+        <h1 className="text-4xl font-bold mb-3">What&apos;s changed</h1>
         <p className="opacity-80 leading-relaxed mb-10">
-          A plain-language record of how the data behind Arounded changes over
-          time — when facilities appear, disappear, or get refreshed. This is
-          part of how we help you spot patterns, not just see a snapshot.
+          A plain-language log of what&apos;s moved on the map — when data centers and facilities
+          appear, get approved, or disappear. It&apos;s how you catch what&apos;s changing near you
+          over time, not just what&apos;s there today.
         </p>
 
         {byDate.length === 0 ? (
           <div className="border border-white/10 rounded-xl p-6 bg-white/5 text-sm opacity-80">
-            No changes recorded yet. As datasets refresh, additions and removals
-            will show up here.
+            Nothing logged yet. As the map refreshes, new and changed sites will show up here.
           </div>
         ) : (
           <div className="space-y-10">

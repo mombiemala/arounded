@@ -21,12 +21,13 @@ export default function MethodologyPage() {
           {/* Quick transparency summary */}
           <section className="mb-12">
             <div className={callout}>
-              <h2 className="text-lg font-semibold mb-2">Quick summary</h2>
+              <h2 className="text-lg font-semibold mb-2">The short version</h2>
               <p className="text-sm opacity-85 leading-relaxed">
-                Arounded is a free map for tracking environmental signals over time. We use public
-                datasets, label sources clearly, and prefer “unknown” over guessing. If you’re making
-                an urgent decision (health, evacuation, emergencies), always rely on official alerts
-                first — Arounded is designed for context and patterns.
+                Arounded is a free, transparent map of what&apos;s around the places you care about —
+                the built environment and the natural one — and how it changes over time. We use
+                public data, name every source, and would rather say &quot;unknown&quot; than guess.
+                For anything urgent — health, evacuation, an emergency — follow your official alerts
+                first. Arounded is for context and patterns, not split-second calls.
               </p>
 
               <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
@@ -277,7 +278,7 @@ export default function MethodologyPage() {
                   <strong>Saved place history:</strong> logged once per day for your saved places
                 </li>
                 <li>
-                  <strong>Data centers:</strong> refreshed weekly from <SourceLink href="https://www.peeringdb.com/" label="PeeringDB" />
+                  <strong>Data centers:</strong> refreshed weekly from <SourceLink href="https://www.fractracker.org/data-centers/" label="FracTracker" />
                 </li>
                 <li>
                   <strong>EPA facilities, power plants, air-quality stations:</strong> fetched on demand for the area you&apos;re viewing
@@ -291,17 +292,18 @@ export default function MethodologyPage() {
 
           {/* How to use responsibly */}
           <section className="mb-12">
-            <h2 className="text-2xl font-bold mb-4">How to use Arounded responsibly</h2>
+            <h2 className="text-2xl font-bold mb-4">Using it well</h2>
             <div className={card}>
               <div className="space-y-3 opacity-90 leading-relaxed text-sm">
                 <p>
-                  Arounded is best for context and patterns — not split-second decisions.
-                  If you're deciding whether to evacuate, whether it's safe to be outdoors during an
-                  emergency, or managing serious symptoms, always use official alerts and medical guidance first.
+                  Arounded is at its best for context and patterns — not split-second decisions. If
+                  you&apos;re deciding whether to evacuate, whether it&apos;s safe to be outside during
+                  an emergency, or managing serious symptoms, lean on official alerts and medical
+                  guidance first.
                 </p>
                 <p>
-                  For everyday planning, the history view can be genuinely helpful: smoke days over
-                  the last month, repeated AQI spikes, or seasonal changes in heat and air quality.
+                  For everyday life, the history view earns its keep: smoke days over the last month,
+                  repeated AQI spikes, or how heat and air quality shift with the seasons.
                 </p>
               </div>
             </div>
