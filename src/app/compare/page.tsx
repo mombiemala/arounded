@@ -234,9 +234,9 @@ function CompareInner() {
       <section className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <h1 className="text-4xl font-bold mb-2">Compare two places</h1>
         <p className="opacity-80 leading-relaxed mb-8 max-w-2xl">
-          Put two neighborhoods side by side — current conditions, air quality, and how many
-          data centers are within {COMPARE_RADIUS_MI} miles. Share the link to compare with
-          someone else.
+          Weighing a move, or just curious how two areas stack up? Put them side by side —
+          air quality, smoke, weather, and how many data centers sit within {COMPARE_RADIUS_MI}{" "}
+          miles. The link is shareable, so you can send the comparison to someone.
         </p>
 
         <div className="grid grid-cols-2 gap-3 mb-8">

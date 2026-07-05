@@ -1338,7 +1338,7 @@ export default function MapView() {
       <div className="w-full lg:max-w-md border-b lg:border-b-0 lg:border-r border-white/10 p-4 space-y-4 lg:overflow-y-auto lg:max-h-[calc(100vh-64px)] order-2 lg:order-1">
         <div>
           <div className="text-xl font-semibold">Arounded</div>
-          <div className="text-sm opacity-70">Search a place, set a radius, explore layers.</div>
+          <div className="text-sm opacity-70">Search a place, then see what&apos;s around it.</div>
         </div>
 
         <div className="space-y-2">
@@ -1580,7 +1580,7 @@ export default function MapView() {
 
         <div className="rounded-lg border border-white/10 bg-white/5 p-3 text-sm space-y-1">
           <div className="flex items-center justify-between mb-2">
-            <div className="font-medium">Current selection</div>
+            <div className="font-medium">This place</div>
             <button
               onClick={async () => {
                 try {
@@ -1651,7 +1651,8 @@ export default function MapView() {
           <div className="rounded-lg border border-white/20 bg-white/10 p-4 space-y-3">
             <div className="font-medium text-sm">Sign in to save places</div>
             <p className="text-xs opacity-80">
-              Create an account to save locations and track historical conditions.
+              Create a free account to save places, see their history, and get alerts when
+              something new is proposed nearby.
             </p>
             <div className="flex gap-2">
               <Link
@@ -1795,7 +1796,8 @@ export default function MapView() {
           <div className="rounded-lg border border-white/10 bg-white/5 p-3 text-sm">
             <div className="font-medium mb-2">Saved places</div>
             <p className="text-xs opacity-70 mb-3">
-              Sign in to save multiple places and track historical conditions.
+              Sign in to save your places, track their history, and get alerts when a data
+              center is proposed nearby.
             </p>
             <Link
               href="/login"
