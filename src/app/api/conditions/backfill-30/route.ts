@@ -52,7 +52,7 @@ export async function GET() {
     const today = new Date();
     const end = today.toISOString().slice(0, 10);
     const startDate = new Date(today);
-    startDate.setDate(today.getDate() - 30);
+    startDate.setDate(today.getDate() - 90);
     const start = startDate.toISOString().slice(0, 10);
 
     for (const p of places ?? []) {

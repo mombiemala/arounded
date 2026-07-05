@@ -145,8 +145,8 @@ export default function MethodologyPage() {
                   into a single number that's easier to interpret (higher = worse air quality).
                 </p>
                 <p>
-                  For saved places, we log daily values once per day so you can see history over the
-                  last 7/30 days.
+                  For saved places, we log daily values once per day so you can see history and
+                  trends over the last 90 days — smoke-day counts, and average and peak AQI.
                 </p>
                 <p className="text-xs opacity-60">
                   Notes: Air quality values can be based on a mix of station observations and models.
