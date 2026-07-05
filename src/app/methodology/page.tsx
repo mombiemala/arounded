@@ -51,7 +51,7 @@ export default function MethodologyPage() {
                 <div className="rounded-lg border border-white/10 bg-black/30 p-4">
                   <div className="font-semibold">Data centers</div>
                   <div className="opacity-75">
-                    <SourceLink href="https://www.peeringdb.com/" label="PeeringDB" /> facility records
+                    <SourceLink href="https://www.fractracker.org/data-centers/" label="FracTracker" /> — proposed to operating, by status
                   </div>
                 </div>
                 <div className="rounded-lg border border-white/10 bg-black/30 p-4">
@@ -201,17 +201,19 @@ export default function MethodologyPage() {
               <div className={card}>
                 <p className="font-semibold mb-1">Data centers</p>
                 <p className="text-sm opacity-70 mb-2">
-                  Source: <SourceLink href="https://www.peeringdb.com/" label="PeeringDB" /> facility records
+                  Source: <SourceLink href="https://www.fractracker.org/data-centers/" label="FracTracker Alliance U.S. Data Centers Tracker" />
                 </p>
                 <p className="text-sm opacity-90 leading-relaxed">
-                  Colocation and interconnection facilities come from <SourceLink href="https://www.peeringdb.com/" label="PeeringDB" />, a community-maintained,
-                  openly available database. We refresh the layer weekly and keep records tagged by
-                  source so it&apos;s always clear where a point came from.
+                  Data centers come from <SourceLink href="https://www.fractracker.org/data-centers/" label="FracTracker Alliance" />&apos;s open tracker, which documents
+                  proposed, approved/under-construction, expanding, and operating sites. Points are
+                  color-coded by status, and where available we show the operator, power demand (MW),
+                  cooling, size, and whether community opposition has been reported. Refreshed weekly.
                 </p>
                 <p className="text-xs opacity-60 mt-3">
-                  Notes: &quot;Data center&quot; covers a wide range (hyperscale to small facilities), and
-                  PeeringDB focuses on interconnection sites. For planning or advocacy, verify a
-                  specific site through local permitting, zoning, or operator documentation.
+                  Notes: the tracker is a documentation effort, so some fields are incomplete and
+                  locations may be approximate for early-stage projects. For planning or advocacy,
+                  verify a specific site through local permitting, zoning, or operator documentation.
+                  FracTracker data is used here under its non-commercial terms with attribution.
                 </p>
               </div>
 
@@ -365,7 +367,8 @@ export default function MethodologyPage() {
                     <SourceLink href="https://openaq.org/" label="OpenAQ" /> — air-quality monitoring station locations.
                   </li>
                   <li>
-                    <SourceLink href="https://www.peeringdb.com/" label="PeeringDB" /> — data center / interconnection facility records.
+                    <SourceLink href="https://www.fractracker.org/data-centers/" label="FracTracker Alliance" /> — U.S. data-center tracker (proposed &amp; operating sites),
+                    used under its non-commercial terms with attribution.
                   </li>
                   <li>
                     <SourceLink href="https://www.ospo.noaa.gov/Products/land/hms.html" label="NOAA HMS" />,{" "}
