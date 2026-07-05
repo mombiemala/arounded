@@ -9,19 +9,19 @@ const callout =
 
 export default function HomePage() {
   return (
-    <div className="min-h-screen bg-black text-white">
+    <div className="min-h-screen bg-ground text-white">
       <Navigation />
 
       {/* Hero */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 lg:py-28">
         <div className="max-w-3xl">
-          <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-sm opacity-90 mb-6">
-            <span className="inline-block w-2 h-2 rounded-full bg-white/60" />
-            What&apos;s nearby • How it&apos;s changing • Sources you can check
+          <div className="inline-flex items-center gap-2 rounded-full border border-brand/25 bg-brand/10 px-3 py-1 text-xs font-mono uppercase tracking-wider text-brand mb-6">
+            <span className="inline-block w-1.5 h-1.5 rounded-full bg-brand" />
+            What&apos;s nearby · How it&apos;s changing · Sources you can check
           </div>
 
-          <h1 className="text-5xl lg:text-6xl font-bold mb-6 leading-tight">
-            See what’s moving in around you.
+          <h1 className="text-5xl lg:text-6xl font-bold mb-6 leading-[1.05] tracking-tight">
+            See what&apos;s moving in <span className="text-brand">around you</span>.
           </h1>
 
           <p className="text-xl opacity-85 mb-8 leading-relaxed">
@@ -34,13 +34,13 @@ export default function HomePage() {
           <div className="flex flex-col sm:flex-row gap-4">
             <Link
               href="/map"
-              className="px-6 py-3 bg-white text-black rounded-lg font-medium hover:bg-white/90 transition-colors text-center"
+              className="px-6 py-3 bg-brand text-brand-ink rounded-lg font-medium hover:bg-brand-strong transition-colors text-center"
             >
               Explore the map
             </Link>
             <Link
               href="/compare"
-              className="px-6 py-3 border border-white/20 rounded-lg font-medium hover:border-white/40 transition-colors text-center"
+              className="px-6 py-3 border border-white/20 rounded-lg font-medium hover:border-brand/60 hover:text-brand transition-colors text-center"
             >
               Compare two places
             </Link>

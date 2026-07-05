@@ -229,7 +229,7 @@ function CompareInner() {
     v == null ? <span className="opacity-50">—</span> : `${Math.round(v)}${suffix}`;
 
   return (
-    <div className="min-h-screen bg-black text-white">
+    <div className="min-h-screen bg-ground text-white">
       <Navigation />
       <section className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <h1 className="text-4xl font-bold mb-2">Compare two places</h1>
@@ -333,7 +333,7 @@ function CompareInner() {
 
 export default function ComparePage() {
   return (
-    <Suspense fallback={<div className="min-h-screen bg-black" />}>
+    <Suspense fallback={<div className="min-h-screen bg-ground" />}>
       <CompareInner />
     </Suspense>
   );

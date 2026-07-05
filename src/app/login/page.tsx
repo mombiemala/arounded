@@ -75,10 +75,10 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-black text-white flex items-center justify-center px-4">
+    <div className="min-h-screen bg-ground text-white flex items-center justify-center px-4">
       <div className="w-full max-w-md">
         {/* Top nav */}
-        <nav className="border-b border-white/10 bg-black/80 backdrop-blur-sm mb-8">
+        <nav className="border-b border-white/10 bg-ground/80 backdrop-blur-sm mb-8">
           <div className="flex items-center justify-between h-16">
             <Link href="/" className="text-xl font-semibold tracking-tight">
               Arounded
@@ -124,7 +124,7 @@ export default function LoginPage() {
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="you@example.com"
                 required
-                className="w-full px-4 py-3 rounded-lg border border-white/20 bg-black/50 text-white placeholder-white/40 focus:outline-none focus:border-white/40"
+                className="w-full px-4 py-3 rounded-lg border border-white/20 bg-ground/50 text-white placeholder-white/40 focus:outline-none focus:border-white/40"
                 disabled={loading}
                 autoComplete="email"
               />
@@ -133,7 +133,7 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full px-6 py-3 bg-white text-black rounded-lg font-medium hover:bg-white/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full px-6 py-3 bg-brand text-brand-ink rounded-lg font-medium hover:bg-brand-strong transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {loading ? "Sending..." : "Send magic link"}
             </button>

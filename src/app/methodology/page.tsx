@@ -8,7 +8,7 @@ const LAST_UPDATED = "July 2026";
 
 export default function MethodologyPage() {
   return (
-    <div className="min-h-screen bg-black text-white">
+    <div className="min-h-screen bg-ground text-white">
       <Navigation />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
@@ -30,43 +30,43 @@ export default function MethodologyPage() {
               </p>
 
               <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
-                <div className="rounded-lg border border-white/10 bg-black/30 p-4">
+                <div className="rounded-lg border border-white/10 bg-ground/30 p-4">
                   <div className="font-semibold">Smoke</div>
                   <div className="opacity-75">
                     <SourceLink href="https://www.ospo.noaa.gov/Products/land/hms.html" label="NOAA" /> daily plume polygons
                   </div>
                 </div>
-                <div className="rounded-lg border border-white/10 bg-black/30 p-4">
+                <div className="rounded-lg border border-white/10 bg-ground/30 p-4">
                   <div className="font-semibold">Air + Weather</div>
                   <div className="opacity-75">
                     <SourceLink href="https://open-meteo.com/en/docs/air-quality-api" label="Open-Meteo Air Quality API" /> AQI/PM2.5 + <SourceLink href="https://open-meteo.com/en/docs" label="Open-Meteo Weather API" /> conditions
                   </div>
                 </div>
-                <div className="rounded-lg border border-white/10 bg-black/30 p-4">
+                <div className="rounded-lg border border-white/10 bg-ground/30 p-4">
                   <div className="font-semibold">EPA facilities</div>
                   <div className="opacity-75">
                     <SourceLink href="https://www.epa.gov/frs" label="EPA FRS" /> radial search (on demand)
                   </div>
                 </div>
-                <div className="rounded-lg border border-white/10 bg-black/30 p-4">
+                <div className="rounded-lg border border-white/10 bg-ground/30 p-4">
                   <div className="font-semibold">Data centers</div>
                   <div className="opacity-75">
                     <SourceLink href="https://www.fractracker.org/data-centers/" label="FracTracker" /> — proposed to operating, by status
                   </div>
                 </div>
-                <div className="rounded-lg border border-white/10 bg-black/30 p-4">
+                <div className="rounded-lg border border-white/10 bg-ground/30 p-4">
                   <div className="font-semibold">Power plants</div>
                   <div className="opacity-75">
                     <SourceLink href="https://www.openstreetmap.org/" label="OpenStreetMap" /> (via Overpass)
                   </div>
                 </div>
-                <div className="rounded-lg border border-white/10 bg-black/30 p-4">
+                <div className="rounded-lg border border-white/10 bg-ground/30 p-4">
                   <div className="font-semibold">Air-quality stations</div>
                   <div className="opacity-75">
                     <SourceLink href="https://openaq.org/" label="OpenAQ" /> monitoring locations
                   </div>
                 </div>
-                <div className="rounded-lg border border-white/10 bg-black/30 p-4">
+                <div className="rounded-lg border border-white/10 bg-ground/30 p-4">
                   <div className="font-semibold">Maps</div>
                   <div className="opacity-75">
                     <SourceLink href="https://www.mapbox.com/" label="Mapbox" /> tiles + geocoding
@@ -110,7 +110,7 @@ export default function MethodologyPage() {
                   Arounded refreshes smoke data daily and displays it as an overlay on the map.
                 </p>
 
-                <div className="mt-4 rounded-lg border border-white/10 bg-black/30 p-4">
+                <div className="mt-4 rounded-lg border border-white/10 bg-ground/30 p-4">
                   <p className="font-semibold mb-1">What “smoke day” means</p>
                   <p className="opacity-85">
                     A "smoke day" means a <SourceLink href="https://www.ospo.noaa.gov/Products/land/hms.html" label="NOAA" /> smoke plume polygon overlapped a saved location at
@@ -387,7 +387,7 @@ export default function MethodologyPage() {
           <div className="pt-8 border-t border-white/10">
             <Link
               href="/map"
-              className="inline-block px-6 py-3 bg-white text-black rounded-lg font-medium hover:bg-white/90 transition-colors"
+              className="inline-block px-6 py-3 bg-brand text-brand-ink rounded-lg font-medium hover:bg-brand-strong transition-colors"
             >
               Explore the map
             </Link>

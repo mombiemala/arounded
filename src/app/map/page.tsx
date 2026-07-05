@@ -7,7 +7,7 @@ function MapViewWrapper() {
 
 export default function MapPage() {
   return (
-    <Suspense fallback={<div className="w-full h-screen bg-black" />}>
+    <Suspense fallback={<div className="w-full h-screen bg-ground" />}>
       <MapViewWrapper />
     </Suspense>
   );
