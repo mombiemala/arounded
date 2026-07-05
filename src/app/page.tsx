@@ -236,12 +236,42 @@ export default function HomePage() {
           </div>
 
           <div className={card}>
-            <h3 className="font-semibold mb-1">Facilities</h3>
+            <h3 className="font-semibold mb-1">EPA facilities</h3>
             <p className="text-sm opacity-70">
               Source: <SourceLink href="https://www.epa.gov/frs" label="EPA Facility Registry Service (FRS)" />
             </p>
             <p className="text-sm opacity-80 mt-3 leading-relaxed">
-              Facility locations and regulatory datasets (coverage depends on layer availability).
+              Regulated facilities, queried on demand from the EPA FRS radial search around your view.
+            </p>
+          </div>
+
+          <div className={card}>
+            <h3 className="font-semibold mb-1">Data centers</h3>
+            <p className="text-sm opacity-70">
+              Source: <SourceLink href="https://www.peeringdb.com/" label="PeeringDB" />
+            </p>
+            <p className="text-sm opacity-80 mt-3 leading-relaxed">
+              Colocation &amp; interconnection facilities from PeeringDB&apos;s open database, refreshed weekly.
+            </p>
+          </div>
+
+          <div className={card}>
+            <h3 className="font-semibold mb-1">Power plants</h3>
+            <p className="text-sm opacity-70">
+              Source: <SourceLink href="https://www.openstreetmap.org/" label="OpenStreetMap" />
+            </p>
+            <p className="text-sm opacity-80 mt-3 leading-relaxed">
+              Power generation sites (with fuel and capacity where tagged), queried on demand via Overpass.
+            </p>
+          </div>
+
+          <div className={card}>
+            <h3 className="font-semibold mb-1">Air-quality stations</h3>
+            <p className="text-sm opacity-70">
+              Source: <SourceLink href="https://openaq.org/" label="OpenAQ" />
+            </p>
+            <p className="text-sm opacity-80 mt-3 leading-relaxed">
+              Locations of real-world monitoring stations, complementing the modeled air-quality values.
             </p>
           </div>
 
@@ -252,16 +282,6 @@ export default function HomePage() {
             </p>
             <p className="text-sm opacity-80 mt-3 leading-relaxed">
               Map tiles and geocoding used for search and navigation.
-            </p>
-          </div>
-
-          <div className={card}>
-            <h3 className="font-semibold mb-1">Data centers</h3>
-            <p className="text-sm opacity-70">
-              Sources vary by region; see <Link href="/methodology" className="underline hover:opacity-80 transition-opacity">Methodology</Link>.
-            </p>
-            <p className="text-sm opacity-80 mt-3 leading-relaxed">
-              Data center locations compiled from public listings and local documentation. Sources vary by region.
             </p>
           </div>
         </div>
@@ -361,6 +381,18 @@ export default function HomePage() {
 
             <div className="flex gap-6 text-sm">
               <Link
+                href="/about"
+                className="opacity-60 hover:opacity-100 transition-opacity"
+              >
+                About
+              </Link>
+              <Link
+                href="/changes"
+                className="opacity-60 hover:opacity-100 transition-opacity"
+              >
+                Changes
+              </Link>
+              <Link
                 href="/methodology"
                 className="opacity-60 hover:opacity-100 transition-opacity"
               >
@@ -371,12 +403,6 @@ export default function HomePage() {
                 className="opacity-60 hover:opacity-100 transition-opacity"
               >
                 Privacy
-              </Link>
-              <Link
-                href="/contact"
-                className="opacity-60 hover:opacity-100 transition-opacity"
-              >
-                Contact
               </Link>
             </div>
           </div>
