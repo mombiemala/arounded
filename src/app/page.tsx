@@ -17,18 +17,18 @@ export default function HomePage() {
         <div className="max-w-3xl">
           <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-sm opacity-90 mb-6">
             <span className="inline-block w-2 h-2 rounded-full bg-white/60" />
-            Updated daily • Transparent sources • Built for public access
+            What&apos;s nearby • How it&apos;s changing • Sources you can check
           </div>
 
           <h1 className="text-5xl lg:text-6xl font-bold mb-6 leading-tight">
-            Understand what’s around you — and how it’s changing.
+            See what’s moving in around you.
           </h1>
 
           <p className="text-xl opacity-85 mb-8 leading-relaxed">
-            Arounded is a free map for tracking environmental signals over time —
-            wildfire smoke, air quality, heat, and nearby facilities. It's built
-            for real-life decisions: planning outdoor time, comparing neighborhoods,
-            understanding what's nearby, and spotting patterns over weeks or months.
+            Arounded is a free, transparent map of what surrounds the places you care about —
+            data centers, industrial facilities, power plants, pollution, and wildfire smoke —
+            and how it changes over time. Built for real questions: is something being built
+            nearby, is my air getting worse, how do two neighborhoods compare?
           </p>
 
           <div className="flex flex-col sm:flex-row gap-4">
@@ -39,15 +39,15 @@ export default function HomePage() {
               Explore the map
             </Link>
             <Link
-              href="/login"
+              href="/compare"
               className="px-6 py-3 border border-white/20 rounded-lg font-medium hover:border-white/40 transition-colors text-center"
             >
-              Sign in to save places
+              Compare two places
             </Link>
           </div>
 
           <p className="text-sm opacity-60 mt-4">
-            No account needed to browse. Sign in only if you want to save locations and track history.
+            No account needed to browse. Sign in to save places and track how they change over time.
           </p>
         </div>
 
@@ -81,14 +81,14 @@ export default function HomePage() {
           <h2 className="text-3xl font-bold mb-6">What this is</h2>
           <div className="space-y-4 opacity-90 leading-relaxed">
             <p>
-              Arounded helps you see environmental context the way people actually need it:
-              not just a single number right now, but what’s been happening around the places
-              you care about.
+              Arounded shows you what&apos;s around a place — the built environment and the natural
+              one — and how it&apos;s changing. Data centers and industrial facilities, power plants,
+              air quality and wildfire smoke, all on one map, all with sources you can verify.
             </p>
             <p>
-              Use it to check wildfire smoke patterns, compare air quality day to day, and understand
-              what's nearby — whether you're planning outdoor time, comparing neighborhoods, or asking
-              bigger community questions.
+              It&apos;s built for the questions a single snapshot can&apos;t answer: is something being
+              built near me, is my neighborhood getting better or worse, and how does one place compare
+              to another over weeks and months?
             </p>
           </div>
         </div>
@@ -101,19 +101,19 @@ export default function HomePage() {
 
           <div className="space-y-3">
             <div className={card}>
-              <p className="opacity-90">Anyone who wants context about the environment around them</p>
+              <p className="opacity-90">Residents asking whether a data center or industrial project is coming near them</p>
+            </div>
+            <div className={card}>
+              <p className="opacity-90">People comparing neighborhoods or considering a move</p>
+            </div>
+            <div className={card}>
+              <p className="opacity-90">Community members and organizers tracking facilities and infrastructure over time</p>
             </div>
             <div className={card}>
               <p className="opacity-90">People sensitive to smoke, pollution, heat, or air quality</p>
             </div>
             <div className={card}>
               <p className="opacity-90">Folks planning outdoor time, travel, or daily routines</p>
-            </div>
-            <div className={card}>
-              <p className="opacity-90">People comparing neighborhoods or considering a move</p>
-            </div>
-            <div className={card}>
-              <p className="opacity-90">Community members tracking facilities and infrastructure</p>
             </div>
             <div className={card}>
               <p className="opacity-90">Researchers, analysts, and curious humans exploring patterns over time</p>
