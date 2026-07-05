@@ -113,6 +113,7 @@ import { supabase } from "@/lib/supabaseClient";
 import { createBrowserClient } from "@/lib/supabaseBrowser";
 import { useAuth } from "@/lib/useAuth";
 import Link from "next/link";
+import RecentChanges from "@/src/components/RecentChanges";
 
 type PointItem = {
   id: string;
@@ -1663,6 +1664,7 @@ export default function MapView() {
           </div>
         )}
 
+        <RecentChanges />
       </div>
 
       {/* Map (full width on top on mobile, fills the right side on desktop) */}
