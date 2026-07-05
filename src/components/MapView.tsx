@@ -126,6 +126,7 @@ import { createBrowserClient } from "@/lib/supabaseBrowser";
 import { useAuth } from "@/lib/useAuth";
 import Link from "next/link";
 import RecentChanges from "@/src/components/RecentChanges";
+import Sparkline from "@/src/components/Sparkline";
 
 type PointItem = {
   id: string;
@@ -152,6 +153,16 @@ type SavedPlace = {
   name: string | null;
   lat: number;
   lng: number;
+};
+
+type HistoryStats = {
+  smoke7: number;
+  smoke30: number;
+  smoke90: number;
+  avgAqi: number | null;
+  peakAqi: number | null;
+  smokeTrend: "worse" | "better" | "flat" | null;
+  summary: string | null;
 };
 
 const PLACE_LABEL_PRESETS = ["Home", "Work", "School", "Other"] as const;
@@ -211,7 +222,7 @@ export default function MapView() {
   const [conditionsLoading, setConditionsLoading] = useState(false);
 
   const [history, setHistory] = useState<DailyConditionRow[] | null>(null);
-  const [historyStats, setHistoryStats] = useState<{ smoke7: number; smoke30: number } | null>(null);
+  const [historyStats, setHistoryStats] = useState<HistoryStats | null>(null);
   const [showLoginPrompt, setShowLoginPrompt] = useState(false);
   const [savingLocation, setSavingLocation] = useState(false);
 
@@ -820,27 +831,70 @@ export default function MapView() {
     if (!user || !placeId) return;
 
     const now = new Date();
-    const d7 = new Date(now); d7.setDate(now.getDate() - 7);
-    const d30 = new Date(now); d30.setDate(now.getDate() - 30);
-
-    const d30s = d30.toISOString().slice(0, 10);
-    const d7s = d7.toISOString().slice(0, 10);
+    const daysAgo = (n: number) => {
+      const d = new Date(now);
+      d.setDate(now.getDate() - n);
+      return d.toISOString().slice(0, 10);
+    };
     const today = now.toISOString().slice(0, 10);
+    const d7s = daysAgo(7);
+    const d30s = daysAgo(30);
+    const d60s = daysAgo(60);
+    const d90s = daysAgo(90);
 
     const { data } = await supabaseClient
       .from("daily_conditions")
       .select("date,smoke_present,us_aqi,temp_max_f")
       .eq("place_id", placeId)
-      .gte("date", d30s)
+      .gte("date", d90s)
       .lte("date", today)
       .order("date", { ascending: false });
 
     const rows = (data ?? []) as DailyConditionRow[];
     setHistory(rows);
 
-    const smoke30 = rows.filter((r) => r.smoke_present).length;
-    const smoke7 = rows.filter((r) => r.smoke_present && r.date >= d7s).length;
-    setHistoryStats({ smoke7, smoke30 });
+    const smoke = (from: string, to?: string) =>
+      rows.filter((r) => r.smoke_present && r.date >= from && (!to || r.date < to)).length;
+    const avg = (from: string, to?: string) => {
+      const vals = rows
+        .filter((r) => r.us_aqi != null && r.date >= from && (!to || r.date < to))
+        .map((r) => r.us_aqi as number);
+      return vals.length ? vals.reduce((a, b) => a + b, 0) / vals.length : null;
+    };
+
+    const smoke7 = smoke(d7s);
+    const smoke30 = smoke(d30s);
+    const smoke90 = smoke(d90s);
+    const recentSmoke = smoke30;
+    const priorSmoke = smoke(d60s, d30s);
+    const aqiVals = rows.filter((r) => r.us_aqi != null).map((r) => r.us_aqi as number);
+    const avgAqi = aqiVals.length ? Math.round(aqiVals.reduce((a, b) => a + b, 0) / aqiVals.length) : null;
+    const peakAqi = aqiVals.length ? Math.max(...aqiVals) : null;
+
+    const recentAqi = avg(d30s);
+    const priorAqi = avg(d60s, d30s);
+
+    let smokeTrend: HistoryStats["smokeTrend"] = null;
+    if (rows.some((r) => r.date < d30s)) {
+      smokeTrend = recentSmoke > priorSmoke ? "worse" : recentSmoke < priorSmoke ? "better" : "flat";
+    }
+
+    // Plain-language summary — prefer the AQI comparison, fall back to smoke days.
+    let summary: string | null = null;
+    if (recentAqi != null && priorAqi != null && Math.abs(recentAqi - priorAqi) >= 4) {
+      summary =
+        recentAqi < priorAqi
+          ? "Air has been cleaner than the previous month."
+          : "Air has been worse than the previous month.";
+    } else if (smokeTrend === "worse") {
+      summary = `${recentSmoke - priorSmoke} more smoke day${recentSmoke - priorSmoke === 1 ? "" : "s"} than the previous month.`;
+    } else if (smokeTrend === "better") {
+      summary = `${priorSmoke - recentSmoke} fewer smoke day${priorSmoke - recentSmoke === 1 ? "" : "s"} than the previous month.`;
+    } else if (rows.length > 0) {
+      summary = "Steady compared with the previous month.";
+    }
+
+    setHistoryStats({ smoke7, smoke30, smoke90, avgAqi, peakAqi, smokeTrend, summary });
   }
 
   function selectSavedPlace(place: SavedPlace) {
@@ -1667,8 +1721,57 @@ export default function MapView() {
                 Refresh
               </button>
             </div>
-            <div className="opacity-80">Smoke days (7): {historyStats.smoke7}</div>
-            <div className="opacity-80">Smoke days (30): {historyStats.smoke30}</div>
+            {historyStats.summary && (
+              <div className="flex items-start gap-2">
+                {historyStats.smokeTrend && (
+                  <span
+                    style={{
+                      color:
+                        historyStats.smokeTrend === "worse"
+                          ? "#ff6b6b"
+                          : historyStats.smokeTrend === "better"
+                          ? "#51cf66"
+                          : "#868e96",
+                    }}
+                  >
+                    {historyStats.smokeTrend === "worse"
+                      ? "↑"
+                      : historyStats.smokeTrend === "better"
+                      ? "↓"
+                      : "→"}
+                  </span>
+                )}
+                <span className="opacity-90 text-xs leading-relaxed">{historyStats.summary}</span>
+              </div>
+            )}
+
+            <div className="grid grid-cols-3 gap-2 text-center pt-1">
+              {[
+                { k: "Smoke 7d", v: historyStats.smoke7 },
+                { k: "Smoke 30d", v: historyStats.smoke30 },
+                { k: "Smoke 90d", v: historyStats.smoke90 },
+              ].map((s) => (
+                <div key={s.k} className="rounded-lg bg-white/5 py-2">
+                  <div className="text-base font-semibold">{s.v}</div>
+                  <div className="text-[10px] uppercase tracking-wide opacity-50">{s.k}</div>
+                </div>
+              ))}
+            </div>
+
+            {(historyStats.avgAqi != null || historyStats.peakAqi != null) && (
+              <div className="pt-1">
+                <div className="flex items-center justify-between text-xs mb-1">
+                  <span className="opacity-60">AQI · last 90 days</span>
+                  <span className="opacity-80">
+                    {historyStats.avgAqi != null ? `avg ${historyStats.avgAqi}` : ""}
+                    {historyStats.peakAqi != null ? ` · peak ${historyStats.peakAqi}` : ""}
+                  </span>
+                </div>
+                {history && (
+                  <Sparkline values={[...history].reverse().map((r) => r.us_aqi)} />
+                )}
+              </div>
+            )}
 
             {history && history.length > 0 && (
               <div className="pt-2 border-t border-white/10 space-y-1">

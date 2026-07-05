@@ -178,7 +178,7 @@ export default function HomePage() {
                 <div>
                   <h3 className="font-semibold mb-1">Track history (with an account)</h3>
                   <p className="text-sm opacity-80">
-                    Save a place and we log daily conditions so you can see patterns over the last 7/30 days.
+                    Save a place and we log daily conditions so you can see patterns and trends over the last 90 days.
                   </p>
                 </div>
               </div>
@@ -320,7 +320,7 @@ export default function HomePage() {
               </li>
               <li className="flex items-start gap-2">
                 <span className="text-white/60">✓</span>
-                <span>Track 7/30-day history automatically</span>
+                <span>Track up to 90 days of history and trends automatically</span>
               </li>
               <li className="flex items-start gap-2">
                 <span className="text-white/60">✓</span>
