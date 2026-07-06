@@ -1,6 +1,7 @@
 import Link from "next/link";
 import Navigation from "@/src/components/Navigation";
 import SourceLink from "@/src/components/SourceLink";
+import { HeroDecor } from "@/src/components/Decor";
 
 const eyebrow = "font-mono text-xs uppercase tracking-[0.16em] text-brand mb-3";
 const wrap = "max-w-3xl mx-auto px-4 sm:px-6 lg:px-8";
@@ -50,10 +51,11 @@ const FREQUENCY = [
 
 export default function MethodologyPage() {
   return (
-    <div className="min-h-screen bg-ground text-white">
+    <div className="min-h-screen bg-ground text-white relative overflow-hidden">
       <Navigation />
+      <HeroDecor variant="contours" />
 
-      <div className={`${wrap} py-16`}>
+      <div className={`${wrap} relative py-16`}>
         {/* Header */}
         <div className={eyebrow}>Methodology</div>
         <h1 className="text-4xl sm:text-5xl font-bold tracking-tight mb-3">

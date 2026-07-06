@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { createBrowserClient } from "@/lib/supabaseBrowser";
+import { Rings, Glow } from "@/src/components/Decor";
 
 const ENABLE_GOOGLE_AUTH = process.env.NEXT_PUBLIC_ENABLE_GOOGLE_AUTH === "true";
 
@@ -75,8 +76,12 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-ground text-white flex items-center justify-center px-4">
-      <div className="w-full max-w-md">
+    <div className="min-h-screen bg-ground text-white flex items-center justify-center px-4 relative overflow-hidden">
+      <div aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden">
+        <Glow className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[640px] h-[640px] rounded-full" opacity={0.08} />
+        <Rings className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[560px] h-[560px]" opacity={0.07} />
+      </div>
+      <div className="w-full max-w-md relative">
         {/* Top nav */}
         <nav className="border-b border-white/10 bg-ground/80 backdrop-blur-sm mb-8">
           <div className="flex items-center justify-between h-16">
