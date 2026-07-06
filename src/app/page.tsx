@@ -2,6 +2,7 @@ import Link from "next/link";
 import Navigation from "@/src/components/Navigation";
 import SourceLink from "@/src/components/SourceLink";
 import Tooltip from "@/src/components/Tooltip";
+import { Contours } from "@/src/components/Decor";
 
 const eyebrow = "font-mono text-xs uppercase tracking-[0.16em] text-brand mb-3";
 const wrap = "max-w-6xl mx-auto px-4 sm:px-6 lg:px-8";
@@ -382,6 +383,10 @@ export default function HomePage() {
             aria-hidden
             className="pointer-events-none absolute inset-0"
             style={{ background: "radial-gradient(circle at 50% 120%, var(--color-brand) 0%, transparent 55%)", opacity: 0.1 }}
+          />
+          <Contours
+            className="pointer-events-none absolute inset-x-0 bottom-0 h-44 w-full"
+            opacity={0.22}
           />
           <h2 className="relative text-3xl sm:text-4xl font-bold mb-3 tracking-tight">
             See what&apos;s around your place.

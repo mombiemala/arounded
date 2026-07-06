@@ -1,4 +1,5 @@
 import Navigation from "@/src/components/Navigation";
+import { HeroDecor } from "@/src/components/Decor";
 import { supabase } from "@/lib/supabaseClient";
 
 export const dynamic = "force-dynamic";
@@ -53,10 +54,11 @@ export default async function ChangesPage() {
   }
 
   return (
-    <div className="min-h-screen bg-ground text-white">
+    <div className="min-h-screen bg-ground text-white relative overflow-hidden">
       <Navigation />
+      <HeroDecor variant="contours" />
 
-      <section className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+      <section className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 relative py-16">
         <div className="font-mono text-xs uppercase tracking-[0.16em] text-brand mb-3">
           Change log
         </div>

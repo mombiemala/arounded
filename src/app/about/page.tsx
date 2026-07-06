@@ -1,6 +1,7 @@
 import Link from "next/link";
 import Navigation from "@/src/components/Navigation";
 import SourceLink from "@/src/components/SourceLink";
+import { HeroDecor } from "@/src/components/Decor";
 
 const eyebrow = "font-mono text-xs uppercase tracking-[0.16em] text-brand mb-3";
 const wrap = "max-w-3xl mx-auto px-4 sm:px-6 lg:px-8";
@@ -69,7 +70,9 @@ export default function AboutPage() {
     <div className="min-h-screen bg-ground text-white">
       <Navigation />
 
-      <div className={`${wrap} py-16`}>
+      <div className="relative overflow-hidden">
+        <HeroDecor variant="rings" />
+        <div className={`${wrap} relative py-16`}>
         {/* Header */}
         <div className={eyebrow}>About Arounded</div>
         <h1 className="text-4xl sm:text-5xl font-bold tracking-tight mb-5">
@@ -155,6 +158,7 @@ export default function AboutPage() {
               See what&apos;s changed
             </Link>
           </div>
+        </div>
         </div>
       </div>
     </div>

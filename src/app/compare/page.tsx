@@ -3,6 +3,7 @@
 import { Suspense, useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Navigation from "@/src/components/Navigation";
+import { HeroDecor } from "@/src/components/Decor";
 import { supabase } from "@/lib/supabaseClient";
 import {
   geocodeForward,
@@ -229,9 +230,10 @@ function CompareInner() {
     v == null ? <span className="opacity-50">—</span> : `${Math.round(v)}${suffix}`;
 
   return (
-    <div className="min-h-screen bg-ground text-white">
+    <div className="min-h-screen bg-ground text-white relative overflow-hidden">
       <Navigation />
-      <section className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+      <HeroDecor variant="plots" />
+      <section className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 relative py-16">
         <div className="font-mono text-xs uppercase tracking-[0.16em] text-brand mb-3">
           Side by side
         </div>
