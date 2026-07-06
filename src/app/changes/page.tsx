@@ -57,25 +57,28 @@ export default async function ChangesPage() {
       <Navigation />
 
       <section className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-        <h1 className="text-4xl font-bold mb-3">What&apos;s changed</h1>
-        <p className="opacity-80 leading-relaxed mb-10">
+        <div className="font-mono text-xs uppercase tracking-[0.16em] text-brand mb-3">
+          Change log
+        </div>
+        <h1 className="text-4xl sm:text-5xl font-bold tracking-tight mb-4">What&apos;s changed</h1>
+        <p className="opacity-80 leading-relaxed max-w-2xl mb-12">
           A plain-language log of what&apos;s moved on the map — when data centers and facilities
           appear, get approved, or disappear. It&apos;s how you catch what&apos;s changing near you
           over time, not just what&apos;s there today.
         </p>
 
         {byDate.length === 0 ? (
-          <div className="border border-white/10 rounded-xl p-6 bg-white/5 text-sm opacity-80">
+          <p className="border-l-2 border-white/15 pl-4 text-sm opacity-70 leading-relaxed">
             Nothing logged yet. As the map refreshes, new and changed sites will show up here.
-          </div>
+          </p>
         ) : (
-          <div className="space-y-10">
+          <div className="space-y-12">
             {byDate.map((group) => (
               <div key={group.date}>
-                <h2 className="text-sm font-semibold opacity-60 mb-4">
+                <h2 className="font-mono text-xs uppercase tracking-[0.14em] opacity-50 mb-4">
                   {humanizeDate(group.date)}
                 </h2>
-                <div className="space-y-3">
+                <ul className="divide-y divide-white/10 border-t border-white/10">
                   {group.items.map((item) => {
                     const meta = CHANGE_META[item.change_type] ?? {
                       verb: item.change_type,
@@ -84,29 +87,26 @@ export default async function ChangesPage() {
                     const dataset =
                       DATASET_LABELS[item.dataset] ?? item.dataset;
                     return (
-                      <div
-                        key={item.id}
-                        className="border border-white/10 rounded-xl p-4 bg-white/5 flex gap-3"
-                      >
+                      <li key={item.id} className="flex gap-3 py-4">
                         <span
-                          className="mt-1 inline-block w-2.5 h-2.5 rounded-full flex-shrink-0"
+                          className="mt-1.5 inline-block w-2 h-2 rounded-full flex-shrink-0"
                           style={{ background: meta.color }}
                         />
                         <div>
                           <div className="text-sm">
                             <span className="font-medium">{meta.verb}</span>{" "}
-                            <span className="opacity-70">· {dataset}</span>
+                            <span className="opacity-60">· {dataset}</span>
                           </div>
                           {item.summary && (
-                            <div className="text-sm opacity-80 mt-0.5">
+                            <div className="text-sm opacity-70 mt-0.5 leading-relaxed">
                               {item.summary}
                             </div>
                           )}
                         </div>
-                      </div>
+                      </li>
                     );
                   })}
-                </div>
+                </ul>
               </div>
             ))}
           </div>

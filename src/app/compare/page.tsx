@@ -231,9 +231,12 @@ function CompareInner() {
   return (
     <div className="min-h-screen bg-ground text-white">
       <Navigation />
-      <section className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <h1 className="text-4xl font-bold mb-2">Compare two places</h1>
-        <p className="opacity-80 leading-relaxed mb-8 max-w-2xl">
+      <section className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+        <div className="font-mono text-xs uppercase tracking-[0.16em] text-brand mb-3">
+          Side by side
+        </div>
+        <h1 className="text-4xl sm:text-5xl font-bold tracking-tight mb-4">Compare two places</h1>
+        <p className="opacity-80 leading-relaxed mb-10 max-w-2xl">
           Weighing a move, or just curious how two areas stack up? Put them side by side —
           air quality, smoke, weather, and how many data centers sit within {COMPARE_RADIUS_MI}{" "}
           miles. The link is shareable, so you can send the comparison to someone.
@@ -255,11 +258,11 @@ function CompareInner() {
         </div>
 
         {!bothChosen ? (
-          <div className="rounded-xl border border-white/10 bg-white/5 p-6 text-sm opacity-80">
+          <p className="border-l-2 border-white/15 pl-4 text-sm opacity-70 leading-relaxed">
             Choose two places above to compare them.
-          </div>
+          </p>
         ) : (
-          <div className="rounded-xl border border-white/10 bg-white/5 p-5">
+          <div className="rounded-2xl border border-white/10 p-6">
             <div className="grid grid-cols-[1fr_auto_1fr] gap-3 items-end pb-3 mb-1 border-b border-white/10">
               <div className="text-right font-semibold truncate">{placeA?.place_name}</div>
               <div className="text-[11px] uppercase tracking-wide opacity-50 text-center min-w-[84px]">
