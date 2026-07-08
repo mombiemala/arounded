@@ -40,10 +40,10 @@ const AUDIENCE = [
 ];
 
 const DC_STATUSES = [
-  { c: "#ff6b6b", l: "Operating", d: "Up and running today." },
-  { c: "#ffa94d", l: "Under construction", d: "Approved or actively being built." },
-  { c: "#ffd43b", l: "Proposed", d: "Announced, in permitting, or awaiting approval." },
-  { c: "#868e96", l: "Cancelled", d: "Withdrawn or blocked." },
+  { c: "#ecab3f", l: "Proposed", d: "Announced, in permitting, or awaiting approval — the stage you can still weigh in on." },
+  { c: "#cf7d4a", l: "Under construction", d: "Approved or actively being built." },
+  { c: "#b7a582", l: "Operating", d: "Up and running today." },
+  { c: "#7c766c", l: "Cancelled", d: "Withdrawn or blocked." },
 ];
 
 const FAQS = [
