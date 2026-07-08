@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import Navigation from "@/src/components/Navigation";
+import AdminEventForm from "@/src/components/AdminEventForm";
 import { createBrowserClient } from "@/lib/supabaseBrowser";
 import { useAuth } from "@/lib/useAuth";
 import {
@@ -88,6 +89,14 @@ export default function AdminEventsPage() {
             This area is for moderators. If that should be you, add your email to the admin allowlist or set
             your account as an admin.
           </p>
+        )}
+
+        {state === "ready" && <AdminEventForm onCreated={load} />}
+
+        {state === "ready" && (
+          <div className="font-mono text-[10px] uppercase tracking-[0.14em] text-brand/80 mb-3">
+            Awaiting review
+          </div>
         )}
 
         {state === "ready" && events.length === 0 && (

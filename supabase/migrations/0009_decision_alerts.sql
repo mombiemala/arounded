@@ -295,33 +295,4 @@ insert into public.jurisdictions (name, state, level, timezone, centroid_lat, ce
   ('Navarro County',        'TX', 'county', 'America/Chicago',  32.0851, -96.4686)
 on conflict (name, state) do nothing;
 
--- A couple of clearly-labeled sample events so the UI renders on day one.
--- source='sample' → the trigger never emails anyone about these.
-insert into public.civic_events
-  (title, event_type, status, confirmed, starts_at, comment_deadline, lat, lng,
-   jurisdiction_id, data_center_id, description, how_to_comment_url, source, source_id)
-select
-  'Sample: rezoning hearing for a proposed data center',
-  'hearing', 'scheduled', false,
-  now() + interval '18 days', now() + interval '11 days',
-  38.72, -77.52,
-  (select id from public.jurisdictions where name = 'Prince William County' and state = 'VA'),
-  (select id from public.data_centers where status = 'proposed'
-     order by abs(lat - 38.72) + abs(lng + 77.52) limit 1),
-  'Example event to demonstrate the Decision Alerts UI. Replace with real agenda data.',
-  'https://www.pwcva.gov/department/planning-office',
-  'sample', 'sample-pwc-1'
-on conflict (source, source_id) do nothing;
-
-insert into public.civic_events
-  (title, event_type, status, confirmed, starts_at, comment_deadline, lat, lng,
-   jurisdiction_id, source, source_id, description)
-select
-  'Sample: county board vote on a data-center special-use permit',
-  'vote', 'scheduled', false,
-  now() + interval '25 days', now() + interval '20 days',
-  33.41, -84.49,
-  (select id from public.jurisdictions where name = 'Fayette County' and state = 'GA'),
-  'sample', 'sample-fayette-1',
-  'Example event to demonstrate the Decision Alerts UI. Replace with real agenda data.'
-on conflict (source, source_id) do nothing;
+-- Real events are added by admins (/admin/events) or community submissions.
