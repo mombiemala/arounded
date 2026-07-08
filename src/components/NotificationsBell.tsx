@@ -27,6 +27,27 @@ function timeAgo(iso: string): string {
   return `${d}d ago`;
 }
 
+function SwitchRow({
+  label,
+  checked,
+  onChange,
+}: {
+  label: string;
+  checked: boolean;
+  onChange: () => void;
+}) {
+  return (
+    <label className="flex items-center justify-between gap-3 cursor-pointer">
+      <span className="text-xs opacity-80">{label}</span>
+      <span className="relative inline-flex items-center shrink-0">
+        <input type="checkbox" className="peer sr-only" checked={checked} onChange={onChange} aria-label={label} />
+        <span className="block w-9 h-5 rounded-full bg-white/15 peer-checked:bg-brand transition-colors peer-focus-visible:ring-2 peer-focus-visible:ring-brand peer-focus-visible:ring-offset-2 peer-focus-visible:ring-offset-ground" />
+        <span className="pointer-events-none absolute left-[3px] top-1/2 -translate-y-1/2 translate-x-0 peer-checked:translate-x-4 w-3.5 h-3.5 rounded-full bg-white shadow-sm transition-transform" />
+      </span>
+    </label>
+  );
+}
+
 export default function NotificationsBell() {
   const { user } = useAuth();
   const router = useRouter();
@@ -34,6 +55,8 @@ export default function NotificationsBell() {
 
   const [items, setItems] = useState<Notification[]>([]);
   const [emailAlerts, setEmailAlerts] = useState(true);
+  const [hearingAlerts, setHearingAlerts] = useState(true);
+  const [leadDays, setLeadDays] = useState(7);
   const [open, setOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement | null>(null);
 
@@ -49,27 +72,46 @@ export default function NotificationsBell() {
           .select("id,title,body,link,read_at,created_at")
           .order("created_at", { ascending: false })
           .limit(20),
-        supabase.from("user_settings").select("email_alerts").maybeSingle(),
+        supabase.from("user_settings").select("email_alerts,hearing_alerts,alert_lead_days").maybeSingle(),
       ]);
       if (cancelled) return;
       setItems((notifs.data ?? []) as Notification[]);
-      if (prefs.data) setEmailAlerts(prefs.data.email_alerts !== false);
+      if (prefs.data) {
+        setEmailAlerts(prefs.data.email_alerts !== false);
+        setHearingAlerts(prefs.data.hearing_alerts !== false);
+        if (prefs.data.alert_lead_days) setLeadDays(prefs.data.alert_lead_days);
+      }
     })();
     return () => {
       cancelled = true;
     };
   }, [user, supabase]);
 
-  const toggleEmailAlerts = async () => {
+  const savePrefs = async (patch: Record<string, unknown>) => {
     if (!user) return;
-    const next = !emailAlerts;
-    setEmailAlerts(next);
     await supabase
       .from("user_settings")
       .upsert(
-        { user_id: user.id, email_alerts: next, updated_at: new Date().toISOString() },
+        { user_id: user.id, ...patch, updated_at: new Date().toISOString() },
         { onConflict: "user_id" }
       );
+  };
+
+  const toggleEmailAlerts = () => {
+    const next = !emailAlerts;
+    setEmailAlerts(next);
+    savePrefs({ email_alerts: next });
+  };
+
+  const toggleHearingAlerts = () => {
+    const next = !hearingAlerts;
+    setHearingAlerts(next);
+    savePrefs({ hearing_alerts: next });
+  };
+
+  const changeLeadDays = (days: number) => {
+    setLeadDays(days);
+    savePrefs({ alert_lead_days: days });
   };
 
   // Close on outside click / Escape.
@@ -177,15 +219,26 @@ export default function NotificationsBell() {
             </div>
           )}
 
-          <label className="flex items-center justify-between gap-3 px-3 py-2.5 border-t border-white/10 cursor-pointer">
-            <span className="text-xs opacity-80">Email me about nearby changes</span>
-            <input
-              type="checkbox"
-              checked={emailAlerts}
-              onChange={toggleEmailAlerts}
-              className="shrink-0"
-            />
-          </label>
+          <div className="border-t border-white/10 px-3 py-3 space-y-3">
+            <div className="font-mono text-[10px] uppercase tracking-[0.14em] text-brand/80">
+              Alert settings
+            </div>
+            <SwitchRow label="Email me about nearby changes" checked={emailAlerts} onChange={toggleEmailAlerts} />
+            <SwitchRow label="Hearings & comment deadlines" checked={hearingAlerts} onChange={toggleHearingAlerts} />
+            <label className="flex items-center justify-between gap-3">
+              <span className="text-xs opacity-80">Remind me ahead of a deadline</span>
+              <select
+                value={leadDays}
+                onChange={(e) => changeLeadDays(Number(e.target.value))}
+                className="shrink-0 rounded-md border border-white/15 bg-white/5 px-2 py-1 text-xs outline-none focus:border-brand/60"
+                aria-label="Reminder lead time"
+              >
+                <option value={3} className="bg-ground">3 days</option>
+                <option value={7} className="bg-ground">7 days</option>
+                <option value={14} className="bg-ground">14 days</option>
+              </select>
+            </label>
+          </div>
         </div>
       )}
     </div>
