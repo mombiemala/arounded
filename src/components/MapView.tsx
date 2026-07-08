@@ -54,12 +54,12 @@ function pointCoords(
 
 function dcStatus(status: unknown): { label: string; color: string } {
   switch (status) {
-    case "proposed": return { label: "Proposed", color: "#ffd43b" };
-    case "construction": return { label: "Under construction", color: "#ffa94d" };
-    case "expanding": return { label: "Expanding", color: "#ffa94d" };
-    case "cancelled": return { label: "Cancelled", color: "#868e96" };
-    case "operational": return { label: "Operating", color: "#ff6b6b" };
-    default: return { label: "Unknown", color: "#ff6b6b" };
+    case "proposed": return { label: "Proposed", color: "#ecab3f" };
+    case "construction": return { label: "Under construction", color: "#cf7d4a" };
+    case "expanding": return { label: "Expanding", color: "#cf7d4a" };
+    case "cancelled": return { label: "Cancelled", color: "#7c766c" };
+    case "operational": return { label: "Operating", color: "#b7a582" };
+    default: return { label: "Unknown", color: "#b7a582" };
   }
 }
 
@@ -461,12 +461,12 @@ export default function MapView() {
           "circle-color": [
             "match",
             ["get", "status"],
-            "proposed", "#ffd43b",
-            "construction", "#ffa94d",
-            "expanding", "#ffa94d",
-            "cancelled", "#868e96",
-            "operational", "#ff6b6b",
-            "#ff6b6b",
+            "proposed", "#ecab3f",
+            "construction", "#cf7d4a",
+            "expanding", "#cf7d4a",
+            "cancelled", "#7c766c",
+            "operational", "#b7a582",
+            "#b7a582",
           ],
           "circle-stroke-color": "#000",
           "circle-stroke-width": 1,
@@ -1410,7 +1410,7 @@ export default function MapView() {
           </div>
 
           {[
-            { color: "#ff6b6b", label: "Data centers", checked: showDataCenters, set: setShowDataCenters },
+            { color: "#ecab3f", label: "Data centers", checked: showDataCenters, set: setShowDataCenters },
             { color: "#4dabf7", label: "EPA facilities", checked: showEpaFacilities, set: setShowEpaFacilities },
             { color: "#51cf66", label: "Power plants", checked: showPowerPlants, set: setShowPowerPlants },
             { color: "#22b8cf", label: "Air-quality stations", checked: showAirStations, set: setShowAirStations },
@@ -1438,10 +1438,10 @@ export default function MapView() {
               {layer.label === "Data centers" && showDataCenters && (
                 <div className="flex flex-wrap gap-x-3 gap-y-1 pl-5 pb-1.5 text-[11px] opacity-70">
                   {[
-                    { c: "#ff6b6b", l: "Operating" },
-                    { c: "#ffa94d", l: "Under construction" },
-                    { c: "#ffd43b", l: "Proposed" },
-                    { c: "#868e96", l: "Cancelled" },
+                    { c: "#ecab3f", l: "Proposed" },
+                    { c: "#cf7d4a", l: "Under construction" },
+                    { c: "#b7a582", l: "Operating" },
+                    { c: "#7c766c", l: "Cancelled" },
                   ].map((s) => (
                     <span key={s.l} className="inline-flex items-center gap-1">
                       <span className="inline-block w-2 h-2 rounded-full" style={{ background: s.c }} />
