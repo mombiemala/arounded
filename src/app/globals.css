@@ -1,16 +1,19 @@
 @import "mapbox-gl/dist/mapbox-gl.css";
 @import "tailwindcss";
 
-/* Brand tokens — a warm, grounded "civic environmental" identity.
-   Deep ink ground (not stark black) + a teal-emerald accent used only on
-   chrome (buttons, links, focus, active nav), kept off the map's functional
-   data-dot palette. */
+/* Brand tokens — a warm, earthy "civic-nature" identity.
+   A deep warm-soil ground (not stark black), a moss/leaf-green accent for
+   chrome (buttons, links, focus, active nav), and two secondary naturals —
+   a warm ochre (sun) and a terracotta (clay) — for gentle warmth. Kept off
+   the map's functional data-dot palette. */
 @theme {
-  --color-ground: #0b1210;
-  --color-ground-soft: #0f1815;
-  --color-brand: #2dd4bf;
-  --color-brand-strong: #14b8a6;
-  --color-brand-ink: #052e28;
+  --color-ground: #14140e;
+  --color-ground-soft: #1c1b13;
+  --color-brand: #86ac6a;
+  --color-brand-strong: #6f9553;
+  --color-brand-ink: #12170d;
+  --color-sun: #e0a95c;
+  --color-clay: #c67c52;
   --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
   --font-mono: var(--font-geist-mono), ui-monospace, monospace;
 }
@@ -25,7 +28,7 @@ html {
 
 body {
   background: var(--color-ground);
-  color: #f2f6f4;
+  color: #f1ede2;
   font-family: var(--font-geist-sans), ui-sans-serif, system-ui, -apple-system,
     "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
