@@ -115,6 +115,11 @@ export default async function DecisionsPage() {
                           How to comment →
                         </a>
                       )}
+                      {(e.starts_at || e.comment_deadline) && (
+                        <a href={`/api/civic-events/${e.id}/ics`} className="opacity-60 hover:opacity-100">
+                          Add to calendar
+                        </a>
+                      )}
                       {e.source_url && (
                         <a href={e.source_url} target="_blank" rel="noopener noreferrer" className="opacity-60 hover:opacity-100">
                           Source
