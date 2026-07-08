@@ -127,6 +127,7 @@ import { useAuth } from "@/lib/useAuth";
 import Link from "next/link";
 import RecentChanges from "@/src/components/RecentChanges";
 import Sparkline from "@/src/components/Sparkline";
+import NearbyDecisions from "@/src/components/NearbyDecisions";
 
 type PointItem = {
   id: string;
@@ -1335,14 +1336,11 @@ export default function MapView() {
   return (
     <div className="w-full lg:min-h-[calc(100vh-64px)] flex flex-col lg:flex-row">
       {/* Left panel (below the map on mobile, beside it on desktop) */}
-      <div className="w-full lg:max-w-md border-b lg:border-b-0 lg:border-r border-white/10 p-4 space-y-4 lg:overflow-y-auto lg:max-h-[calc(100vh-64px)] order-2 lg:order-1">
-        <div>
-          <div className="text-xl font-semibold">Arounded</div>
-          <div className="text-sm opacity-70">Search a place, then see what&apos;s around it.</div>
-        </div>
-
+      <div className="w-full lg:max-w-md border-b lg:border-b-0 lg:border-r border-white/10 p-4 sm:p-5 space-y-5 lg:overflow-y-auto lg:max-h-[calc(100vh-64px)] order-1 lg:order-1">
         <div className="space-y-2">
-          <label className="text-sm font-medium">Search</label>
+          <div className="font-mono text-[10px] uppercase tracking-[0.14em] text-brand/80">
+            Find a place
+          </div>
           <input
             value={query}
             onChange={(e) => setQuery(e.target.value)}
@@ -1385,8 +1383,10 @@ export default function MapView() {
             )}
         </div>
 
-        <div className="space-y-2">
-          <label className="text-sm font-medium">Radius</label>
+        <div className="space-y-2 pt-4 border-t border-white/10">
+          <div className="font-mono text-[10px] uppercase tracking-[0.14em] text-brand/80">
+            Within radius
+          </div>
           <div className="flex gap-2 flex-wrap">
             {RADIUS_OPTIONS_MILES.map((m) => (
               <button
@@ -1394,7 +1394,7 @@ export default function MapView() {
                 onClick={() => setRadiusMiles(m)}
                 className={`px-3 py-1.5 rounded-full border text-sm transition-colors ${
                   radiusMiles === m
-                    ? "border-white/40 bg-white/10"
+                    ? "border-brand/50 bg-brand/15 text-brand"
                     : "border-white/15 hover:border-white/30"
                 }`}
               >
@@ -1404,87 +1404,57 @@ export default function MapView() {
           </div>
         </div>
 
-        <div className="space-y-2">
-          <label className="text-sm font-medium">Layers</label>
+        <div className="space-y-1 pt-4 border-t border-white/10">
+          <div className="font-mono text-[10px] uppercase tracking-[0.14em] text-brand/80 mb-1">
+            Show on the map
+          </div>
 
-          <label className="flex items-center justify-between rounded-lg border border-white/10 bg-white/5 px-3 py-2 cursor-pointer">
-            <span className="text-sm flex items-center gap-2">
-              <span className="inline-block w-2.5 h-2.5 rounded-full" style={{ background: "#ff6b6b" }} />
-              Data centers
-            </span>
-            <input
-              type="checkbox"
-              checked={showDataCenters}
-              onChange={(e) => setShowDataCenters(e.target.checked)}
-            />
-          </label>
-
-          {showDataCenters && (
-            <div className="flex flex-wrap gap-x-3 gap-y-1 px-1 text-[11px] opacity-70">
-              {[
-                { c: "#ff6b6b", l: "Operating" },
-                { c: "#ffa94d", l: "Under construction" },
-                { c: "#ffd43b", l: "Proposed" },
-                { c: "#868e96", l: "Cancelled" },
-              ].map((s) => (
-                <span key={s.l} className="inline-flex items-center gap-1">
-                  <span className="inline-block w-2 h-2 rounded-full" style={{ background: s.c }} />
-                  {s.l}
+          {[
+            { color: "#ff6b6b", label: "Data centers", checked: showDataCenters, set: setShowDataCenters },
+            { color: "#4dabf7", label: "EPA facilities", checked: showEpaFacilities, set: setShowEpaFacilities },
+            { color: "#51cf66", label: "Power plants", checked: showPowerPlants, set: setShowPowerPlants },
+            { color: "#22b8cf", label: "Air-quality stations", checked: showAirStations, set: setShowAirStations },
+            { color: "#ffa94d", label: "Smoke", checked: showSmoke, set: setShowSmoke },
+          ].map((layer) => (
+            <div key={layer.label}>
+              <label className="flex items-center justify-between py-1.5 cursor-pointer group">
+                <span className="text-sm flex items-center gap-2.5">
+                  <span className="inline-block w-2.5 h-2.5 rounded-full" style={{ background: layer.color }} />
+                  {layer.label}
                 </span>
-              ))}
+                <span className="relative inline-flex items-center shrink-0">
+                  <input
+                    type="checkbox"
+                    className="peer sr-only"
+                    checked={layer.checked}
+                    onChange={(e) => layer.set(e.target.checked)}
+                    aria-label={`Toggle ${layer.label}`}
+                  />
+                  <span className="block w-9 h-5 rounded-full bg-white/15 peer-checked:bg-brand transition-colors peer-focus-visible:ring-2 peer-focus-visible:ring-brand peer-focus-visible:ring-offset-2 peer-focus-visible:ring-offset-ground" />
+                  <span className="pointer-events-none absolute left-[3px] top-1/2 -translate-y-1/2 translate-x-0 peer-checked:translate-x-4 w-3.5 h-3.5 rounded-full bg-white shadow-sm transition-transform" />
+                </span>
+              </label>
+
+              {layer.label === "Data centers" && showDataCenters && (
+                <div className="flex flex-wrap gap-x-3 gap-y-1 pl-5 pb-1.5 text-[11px] opacity-70">
+                  {[
+                    { c: "#ff6b6b", l: "Operating" },
+                    { c: "#ffa94d", l: "Under construction" },
+                    { c: "#ffd43b", l: "Proposed" },
+                    { c: "#868e96", l: "Cancelled" },
+                  ].map((s) => (
+                    <span key={s.l} className="inline-flex items-center gap-1">
+                      <span className="inline-block w-2 h-2 rounded-full" style={{ background: s.c }} />
+                      {s.l}
+                    </span>
+                  ))}
+                </div>
+              )}
             </div>
-          )}
+          ))}
 
-          <label className="flex items-center justify-between rounded-lg border border-white/10 bg-white/5 px-3 py-2 cursor-pointer">
-            <span className="text-sm flex items-center gap-2">
-              <span className="inline-block w-2.5 h-2.5 rounded-full" style={{ background: "#4dabf7" }} />
-              EPA facilities
-            </span>
-            <input
-              type="checkbox"
-              checked={showEpaFacilities}
-              onChange={(e) => setShowEpaFacilities(e.target.checked)}
-            />
-          </label>
-
-          <label className="flex items-center justify-between rounded-lg border border-white/10 bg-white/5 px-3 py-2 cursor-pointer">
-            <span className="text-sm flex items-center gap-2">
-              <span className="inline-block w-2.5 h-2.5 rounded-full" style={{ background: "#51cf66" }} />
-              Power plants
-            </span>
-            <input
-              type="checkbox"
-              checked={showPowerPlants}
-              onChange={(e) => setShowPowerPlants(e.target.checked)}
-            />
-          </label>
-
-          <label className="flex items-center justify-between rounded-lg border border-white/10 bg-white/5 px-3 py-2 cursor-pointer">
-            <span className="text-sm flex items-center gap-2">
-              <span className="inline-block w-2.5 h-2.5 rounded-full" style={{ background: "#22b8cf" }} />
-              Air-quality stations
-            </span>
-            <input
-              type="checkbox"
-              checked={showAirStations}
-              onChange={(e) => setShowAirStations(e.target.checked)}
-            />
-          </label>
-
-          <label className="flex items-center justify-between rounded-lg border border-white/10 bg-white/5 px-3 py-2 cursor-pointer">
-            <span className="text-sm flex items-center gap-2">
-              <span className="inline-block w-2.5 h-2.5 rounded-full" style={{ background: "#ffa94d" }} />
-              Smoke
-            </span>
-            <input
-              type="checkbox"
-              checked={showSmoke}
-              onChange={(e) => setShowSmoke(e.target.checked)}
-            />
-          </label>
-
-          <div className="text-xs opacity-60 px-1">
-            Daily smoke layer — NOAA satellite analysis, updated once per day.
+          <div className="text-xs opacity-55 pt-2 leading-relaxed">
+            Smoke is a daily NOAA satellite layer.
             {smokeLoading
               ? " Loading plumes…"
               : smokeData?.features?.length != null
@@ -1492,18 +1462,20 @@ export default function MapView() {
               : ""}
           </div>
 
-          {layerError && <div className="text-xs text-red-600">{layerError}</div>}
+          {layerError && <div className="text-xs text-clay">{layerError}</div>}
 
-          <div className="text-xs opacity-70">
-            Loaded: {dataCenters.length} data centers
+          <div className="text-xs opacity-55">
+            {dataCenters.length} data centers in view
             {showEpaFacilities ? `, ${epaFacilities.length} EPA facilities` : ""}
             {showPowerPlants ? `, ${powerPlants.length} power plants` : ""}
             {showAirStations ? `, ${airStations.length} air stations` : ""}
           </div>
         </div>
 
-        <div className="space-y-2">
-          <label className="text-sm font-medium">Conditions</label>
+        <div className="space-y-2 pt-4 border-t border-white/10">
+          <div className="font-mono text-[10px] uppercase tracking-[0.14em] text-brand/80">
+            Air &amp; weather
+          </div>
 
           <div className="rounded-lg border border-white/10 bg-white/5 p-3 text-sm space-y-2">
             {conditionsLoading && <div className="opacity-70">Loading conditions…</div>}
@@ -1578,9 +1550,9 @@ export default function MapView() {
           </div>
         </div>
 
-        <div className="rounded-lg border border-white/10 bg-white/5 p-3 text-sm space-y-1">
+        <div className="pt-4 border-t border-white/10 text-sm space-y-1">
           <div className="flex items-center justify-between mb-2">
-            <div className="font-medium">This place</div>
+            <div className="font-mono text-[10px] uppercase tracking-[0.14em] text-brand/80">This place</div>
             <button
               onClick={async () => {
                 try {
@@ -1591,13 +1563,13 @@ export default function MapView() {
                   console.error("Failed to copy:", err);
                 }
               }}
-              className="text-xs px-2 py-1 border border-white/20 rounded hover:border-white/40 transition-colors"
+              className="text-xs px-2 py-1 border border-white/20 rounded hover:border-brand/50 hover:text-brand transition-colors"
             >
               Share
             </button>
           </div>
-          <div className="opacity-80">
-            {selectedPlace ? selectedPlace.place_name : "Default (Leesburg area)"}
+          <div className="opacity-85">
+            {selectedPlace ? selectedPlace.place_name : "Search an address to center the map"}
           </div>
           <div className="opacity-70">
             Center: {center[1].toFixed(4)}, {center[0].toFixed(4)}
@@ -1640,12 +1612,14 @@ export default function MapView() {
           {selectedPlace && !user && (
             <button
               onClick={handleSaveLocation}
-              className="mt-3 w-full px-3 py-2 text-xs border border-white/20 rounded-lg hover:border-white/40 transition-colors"
+              className="mt-3 w-full px-3 py-2 text-xs border border-white/20 rounded-lg hover:border-brand/50 hover:text-brand transition-colors"
             >
               Save this place
             </button>
           )}
         </div>
+
+        <NearbyDecisions lat={center[1]} lng={center[0]} />
 
         {showLoginPrompt && (
           <div className="rounded-lg border border-white/20 bg-white/10 p-4 space-y-3">
@@ -1672,8 +1646,8 @@ export default function MapView() {
         )}
 
         {user && savedPlaces.length > 0 && (
-          <div className="rounded-lg border border-white/10 bg-white/5 p-3 text-sm space-y-2">
-            <div className="font-medium">My places</div>
+          <div className="pt-4 border-t border-white/10 text-sm space-y-2">
+            <div className="font-mono text-[10px] uppercase tracking-[0.14em] text-brand/80">My places</div>
             <div className="space-y-1">
               {savedPlaces.map((p) => (
                 <div
@@ -1812,7 +1786,7 @@ export default function MapView() {
       </div>
 
       {/* Map (full width on top on mobile, fills the right side on desktop) */}
-      <div className="relative w-full h-[60vh] lg:h-auto lg:flex-1 order-1 lg:order-2">
+      <div className="relative w-full h-[54vh] lg:h-auto lg:flex-1 order-2 lg:order-2">
         <div ref={mapContainerRef} className="w-full h-full" />
         
         {/* Copied Toast */}
