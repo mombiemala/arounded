@@ -5,10 +5,8 @@ import Link from "next/link";
 import { createBrowserClient } from "@/lib/supabaseBrowser";
 import { Rings, Glow } from "@/src/components/Decor";
 
-// Google sign-in stays hidden until the Google provider is actually configured
-// in Supabase; showing it otherwise just errors. Flip this back to the env check
-// once that's set up: process.env.NEXT_PUBLIC_ENABLE_GOOGLE_AUTH === "true".
-const ENABLE_GOOGLE_AUTH = false;
+// The Google provider is configured in Supabase, so the button is enabled.
+const ENABLE_GOOGLE_AUTH = true;
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");

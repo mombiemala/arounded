@@ -118,6 +118,14 @@ export async function GET() {
   const from = process.env.RESEND_FROM || "Arounded <alerts@arounded.app>";
   const siteUrl = (process.env.NEXT_PUBLIC_SITE_URL || "").replace(/\/$/, "");
 
+  // Building-phase safety valve. While EMAIL_ALLOWLIST is set, real email is
+  // delivered ONLY to those addresses (e.g. your own) — everyone else's alerts
+  // stay in-app. Clear the env var to go live for all users.
+  const allow = (process.env.EMAIL_ALLOWLIST || "")
+    .split(",")
+    .map((s) => s.trim().toLowerCase())
+    .filter(Boolean);
+
   try {
     const supabase = getSupabase();
 
@@ -196,6 +204,14 @@ export async function GET() {
       const { data: userRes } = await supabase.auth.admin.getUserById(userId);
       const email = userRes?.user?.email;
       if (!email) {
+        await supabase.from("notifications").update({ emailed_at: now }).in("id", ids);
+        continue;
+      }
+
+      // Safety valve: while an allowlist is set, only deliver to those addresses.
+      // Others are marked handled (still visible in-app) so no backlog blasts out
+      // when the allowlist is later removed.
+      if (allow.length > 0 && !allow.includes(email.toLowerCase())) {
         await supabase.from("notifications").update({ emailed_at: now }).in("id", ids);
         continue;
       }
