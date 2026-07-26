@@ -143,12 +143,18 @@ export default function HomePage() {
               over time.
             </p>
 
-            <div className="flex flex-col sm:flex-row gap-4">
+            <div className="flex flex-col sm:flex-row sm:flex-wrap gap-4">
               <Link
                 href="/map"
                 className="px-6 py-3 bg-brand text-brand-ink rounded-lg font-medium hover:bg-brand-strong transition-colors text-center"
               >
                 Explore the map
+              </Link>
+              <Link
+                href="/near"
+                className="px-6 py-3 border border-white/20 rounded-lg font-medium hover:border-brand/60 hover:text-brand transition-colors text-center"
+              >
+                Check an address
               </Link>
               <Link
                 href="/compare"
@@ -159,7 +165,8 @@ export default function HomePage() {
             </div>
 
             <p className="text-sm opacity-55 mt-4">
-              No account needed to browse. Sign in to save places and track how they change over time.
+              The real facts around a place — every source named, not a black-box risk score. No account
+              needed to browse.
             </p>
           </div>
         </div>
