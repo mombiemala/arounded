@@ -37,8 +37,14 @@ export async function POST(request: Request) {
   const now = new Date().toISOString();
 
   if (action === "confirm") {
-    // Flips the trust badge; no status change, so no duplicate alert fires.
-    const { error } = await admin.from("civic_events").update({ confirmed: true, updated_at: now }).eq("id", id);
+    // Community events are already live (confirm just flips the trust badge, no
+    // status change → no duplicate alert). Auto-ingested candidates sit in
+    // pending_review and are silent + non-public; confirming promotes them to
+    // scheduled, which fires the nearby-place alert for the first time.
+    const { data: cur } = await admin.from("civic_events").select("status").eq("id", id).maybeSingle();
+    const patch: Record<string, unknown> = { confirmed: true, updated_at: now };
+    if ((cur as { status?: string } | null)?.status === "pending_review") patch.status = "scheduled";
+    const { error } = await admin.from("civic_events").update(patch).eq("id", id);
     if (error) return NextResponse.json({ ok: false, error: error.message }, { status: 500 });
   } else if (action === "reject") {
     const { error } = await admin.from("civic_events").update({ status: "rejected", updated_at: now }).eq("id", id);
