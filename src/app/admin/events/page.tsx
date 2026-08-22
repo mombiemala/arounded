@@ -71,8 +71,9 @@ export default function AdminEventsPage() {
         <div className="font-mono text-xs uppercase tracking-[0.16em] text-brand mb-3">Moderation</div>
         <h1 className="text-4xl font-bold tracking-tight mb-4">Review submissions</h1>
         <p className="opacity-70 leading-relaxed max-w-2xl mb-10">
-          Community-submitted hearings appear live, badged &quot;unconfirmed.&quot; Confirm the ones you&apos;ve
-          verified against the jurisdiction, or reject spam and duplicates.
+          Community-submitted hearings appear live, badged &quot;unconfirmed.&quot; Auto-ingested candidates from
+          county calendars stay hidden until you confirm them. Verify against the jurisdiction, then confirm —
+          or reject spam and duplicates.
         </p>
 
         {state === "loading" && <p className="opacity-60 text-sm">Loading…</p>}
@@ -114,9 +115,20 @@ export default function AdminEventsPage() {
                 <li key={e.id} className="py-5">
                   <div className="flex items-start justify-between gap-4 flex-wrap">
                     <div className="min-w-0">
-                      <div className="font-mono text-[10px] uppercase tracking-[0.08em] opacity-55 mb-1">
-                        {EVENT_TYPE_LABEL[e.event_type] ?? e.event_type}
-                        {place ? ` · ${place}` : ""}
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="font-mono text-[10px] uppercase tracking-[0.08em] opacity-55">
+                          {EVENT_TYPE_LABEL[e.event_type] ?? e.event_type}
+                          {place ? ` · ${place}` : ""}
+                        </span>
+                        {e.source?.startsWith("ingest:") ? (
+                          <span className="font-mono text-[9px] uppercase tracking-[0.08em] px-1.5 py-0.5 rounded bg-brand/15 text-brand">
+                            Auto-ingested
+                          </span>
+                        ) : (
+                          <span className="font-mono text-[9px] uppercase tracking-[0.08em] px-1.5 py-0.5 rounded bg-white/10 opacity-60">
+                            Community
+                          </span>
+                        )}
                       </div>
                       <div className="font-semibold leading-snug">{e.title}</div>
                       <div className="text-sm opacity-60 mt-1">
