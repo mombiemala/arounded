@@ -11,6 +11,7 @@ export type IngestSource = {
   defaultLat: number; // fallback location (the government center)
   defaultLng: number;
   howToCommentUrl: string;
+  calendarUrl: string; // human-facing calendar, used as source link
   icalFeeds: string[];
 };
 
@@ -32,18 +33,19 @@ export const SOURCES: IngestSource[] = [
     defaultLat: 39.1155,
     defaultLng: -77.5644,
     howToCommentUrl: "https://www.loudoun.gov/SignUpToSpeak",
-    // CivicEngage "County Meetings" calendar (CID=14) iCal export — best-effort
-    // default; override with INGEST_LOUDOUN_ICAL once the exact feed is verified.
+    calendarUrl: "https://www.loudoun.gov/calendar.aspx?CID=14",
+    // CivicEngage "County Meetings" calendar (CID=14) iCal export — verified live.
     icalFeeds: envList("INGEST_LOUDOUN_ICAL", [
       "https://www.loudoun.gov/common/modules/iCalendar/iCalendar.aspx?catID=14&feed=calendar",
     ]),
   },
 ];
 
-// Which calendar entries are worth staging: the meetings where land-use and
-// data-center decisions actually get a public vote / comment window.
-const RELEVANT_MEETING =
-  /(public hearing|land use|planning commission|board of supervisors)/i;
+// Which calendar entries are worth staging: the public hearings before the two
+// bodies that decide data-center special exceptions. This is the highest-signal
+// slice — the county calendar carries no agenda text, so the admin confirms the
+// data-center-relevant ones after checking each agenda.
+const HEARING_BODY = /(planning commission|board of supervisors)/i;
 
 // Signals that a staged meeting's agenda is data-center relevant (used to
 // enrich + prioritize; matched against the agenda text when available).
@@ -54,7 +56,7 @@ const DC_KEYWORDS: RegExp[] = [
 ];
 
 export function isRelevantMeeting(summary: string): boolean {
-  return RELEVANT_MEETING.test(summary);
+  return /public hearing/i.test(summary) && HEARING_BODY.test(summary);
 }
 
 export function matchDataCenter(text: string): string[] {
@@ -125,7 +127,7 @@ export function buildCandidate(
       ),
     how_to_comment_url: src.howToCommentUrl,
     source: `ingest:${src.slug}`,
-    source_url: ev.url,
+    source_url: ev.url && /^https?:\/\//i.test(ev.url) ? ev.url : src.calendarUrl,
     source_id: `${src.slug}:${stableKey}`.slice(0, 200),
     dcMatched: dcHits.length > 0,
   };

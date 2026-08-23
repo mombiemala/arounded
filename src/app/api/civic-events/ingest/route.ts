@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { parseICal } from "@/lib/ingest/ical";
-import { SOURCES, isRelevantMeeting, buildCandidate, type Candidate } from "@/lib/ingest/sources";
+import { SOURCES, isRelevantMeeting, buildCandidate, matchDataCenter, type Candidate } from "@/lib/ingest/sources";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
@@ -89,12 +89,30 @@ export async function GET(request: Request) {
       entry.relevant = relevant.length;
       entry.sampleTitles = relevant.slice(0, 5).map((e) => e.summary);
 
+      if (dryRun) {
+        entry.feedMentionsDC = /data\s?cent(?:er|re)/i.test(res.text);
+        entry.sampleEvents = relevant.slice(0, 6).map((e) => ({
+          summary: e.summary,
+          hasUrl: !!e.url,
+          descLen: e.description.length,
+          url: e.url,
+        }));
+        // Probe agenda enrichment on the first few events that carry a URL.
+        const probes: Record<string, unknown>[] = [];
+        for (const e of relevant.filter((e) => e.url && /^https?:\/\//i.test(e.url)).slice(0, 3)) {
+          const a = await fetchText(e.url!, 6000);
+          const txt = a.text ? htmlToText(a.text) : "";
+          probes.push({ url: e.url, status: a.status, agendaLen: txt.length, dcHits: matchDataCenter(txt), err: a.error });
+        }
+        entry.agendaProbes = probes;
+      }
+
       // Best-effort agenda enrichment (bounded) to flag data-center relevance.
       const candidates: Candidate[] = [];
       let enriched = 0;
       for (const ev of relevant) {
         let agendaText: string | undefined;
-        if (ev.url && enriched < MAX_ENRICH) {
+        if (ev.url && /^https?:\/\//i.test(ev.url) && enriched < MAX_ENRICH) {
           enriched++;
           const a = await fetchText(ev.url, 5000);
           if (a.text) agendaText = htmlToText(a.text);
