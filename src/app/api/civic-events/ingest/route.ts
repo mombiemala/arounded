@@ -99,7 +99,7 @@ export async function GET(request: Request) {
         }));
         // Probe agenda enrichment on the first few events that carry a URL.
         const probes: Record<string, unknown>[] = [];
-        for (const e of relevant.filter((e) => e.url).slice(0, 3)) {
+        for (const e of relevant.filter((e) => e.url && /^https?:\/\//i.test(e.url)).slice(0, 3)) {
           const a = await fetchText(e.url!, 6000);
           const txt = a.text ? htmlToText(a.text) : "";
           probes.push({ url: e.url, status: a.status, agendaLen: txt.length, dcHits: matchDataCenter(txt), err: a.error });
@@ -112,7 +112,7 @@ export async function GET(request: Request) {
       let enriched = 0;
       for (const ev of relevant) {
         let agendaText: string | undefined;
-        if (ev.url && enriched < MAX_ENRICH) {
+        if (ev.url && /^https?:\/\//i.test(ev.url) && enriched < MAX_ENRICH) {
           enriched++;
           const a = await fetchText(ev.url, 5000);
           if (a.text) agendaText = htmlToText(a.text);
