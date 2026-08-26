@@ -145,6 +145,7 @@ export async function GET(request: Request) {
     // PC/BOS public-hearing agendas and what the agenda links look like.
     if (dryRun && src.granicus) {
       const g: Record<string, unknown>[] = [];
+      let primaryItems: { title: string; link: string | null }[] = [];
       for (const v of src.granicus.viewIds) {
         const url = `${src.granicus.base}/ViewPublisherRSS.php?view_id=${v}&mode=agendas`;
         const r = await fetchText(url, 8000);
@@ -156,8 +157,29 @@ export async function GET(request: Request) {
           sample: items.slice(0, 5).map((i) => ({ title: i.title, link: i.link, pubDate: i.pubDate })),
           err: r.error,
         });
+        if (!primaryItems.length && items.length) primaryItems = items;
       }
-      report.push({ source: src.slug, granicus: g });
+      // Validate agenda scanning: fetch a few agendas via both viewer endpoints
+      // and report which one yields scannable text + data-center hits.
+      const agendaScan: Record<string, unknown>[] = [];
+      for (const it of primaryItems.slice(0, 3)) {
+        if (!it.link) continue;
+        const genUrl = it.link.replace("/AgendaViewer.php", "/GeneratedAgendaViewer.php");
+        const [a, b] = await Promise.all([fetchText(it.link, 8000), fetchText(genUrl, 8000)]);
+        const at = a.text ? htmlToText(a.text) : "";
+        const bt = b.text ? htmlToText(b.text) : "";
+        const snip = (txt: string) => {
+          const m = /data\s?cent(?:er|re)/i.exec(txt);
+          if (!m) return "";
+          return txt.slice(Math.max(0, m.index - 80), m.index + 160);
+        };
+        agendaScan.push({
+          title: it.title,
+          agendaViewer: { status: a.status, len: at.length, dcHits: matchDataCenter(at) },
+          generated: { status: b.status, len: bt.length, dcHits: matchDataCenter(bt), snippet: snip(bt) },
+        });
+      }
+      report.push({ source: src.slug, granicus: g, agendaScan });
     }
   }
 
