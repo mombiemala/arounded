@@ -13,6 +13,9 @@ export type IngestSource = {
   howToCommentUrl: string;
   calendarUrl: string; // human-facing calendar, used as source link
   icalFeeds: string[];
+  // Optional Granicus agenda source for v2 enrichment (scan agendas for
+  // data-center items and attach them to the matching hearing candidate).
+  granicus?: { base: string; viewIds: string[] };
 };
 
 function envList(name: string, fallback: string[]): string[] {
@@ -38,6 +41,10 @@ export const SOURCES: IngestSource[] = [
     icalFeeds: envList("INGEST_LOUDOUN_ICAL", [
       "https://www.loudoun.gov/common/modules/iCalendar/iCalendar.aspx?catID=14&feed=calendar",
     ]),
+    granicus: {
+      base: process.env.INGEST_LOUDOUN_GRANICUS_BASE || "https://loudoun.granicus.com",
+      viewIds: envList("INGEST_LOUDOUN_GRANICUS_VIEWS", ["88", "90", "77", "86", "89", "2", "3"]),
+    },
   },
 ];
 

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { parseICal } from "@/lib/ingest/ical";
+import { parseRss } from "@/lib/ingest/granicus";
 import { SOURCES, isRelevantMeeting, buildCandidate, matchDataCenter, type Candidate } from "@/lib/ingest/sources";
 
 export const dynamic = "force-dynamic";
@@ -138,6 +139,25 @@ export async function GET(request: Request) {
         }
       }
       report.push(entry);
+    }
+
+    // v2 discovery: probe Granicus agenda feeds to find which view carries the
+    // PC/BOS public-hearing agendas and what the agenda links look like.
+    if (dryRun && src.granicus) {
+      const g: Record<string, unknown>[] = [];
+      for (const v of src.granicus.viewIds) {
+        const url = `${src.granicus.base}/ViewPublisherRSS.php?view_id=${v}&mode=agendas`;
+        const r = await fetchText(url, 8000);
+        const items = r.text ? parseRss(r.text) : [];
+        g.push({
+          view_id: v,
+          status: r.status,
+          items: items.length,
+          sample: items.slice(0, 5).map((i) => ({ title: i.title, link: i.link, pubDate: i.pubDate })),
+          err: r.error,
+        });
+      }
+      report.push({ source: src.slug, granicus: g });
     }
   }
 
