@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { parseICal } from "@/lib/ingest/ical";
-import { parseRss } from "@/lib/ingest/granicus";
+import { parseRss, bodyOf, parseTitleDate, easternYMD, sameYMD, extractDcItems } from "@/lib/ingest/granicus";
 import { SOURCES, isRelevantMeeting, buildCandidate, matchDataCenter, type Candidate } from "@/lib/ingest/sources";
 
 export const dynamic = "force-dynamic";
@@ -177,9 +177,52 @@ export async function GET(request: Request) {
           title: it.title,
           agendaViewer: { status: a.status, len: at.length, dcHits: matchDataCenter(at) },
           generated: { status: b.status, len: bt.length, dcHits: matchDataCenter(bt), snippet: snip(bt) },
+          dcItems: extractDcItems(at.length >= bt.length ? at : bt),
         });
       }
       report.push({ source: src.slug, granicus: g, agendaScan });
+    }
+
+    // v2 enrichment: match each staged hearing to its Granicus agenda by date +
+    // body, scan for data-center items, and rewrite the candidate with the
+    // specific applications. Only touches not-yet-enriched pending_review rows,
+    // so it's idempotent and never clobbers an admin edit.
+    if (!dryRun && src.granicus) {
+      const feedUrl = `${src.granicus.base}/ViewPublisherRSS.php?view_id=${src.granicus.currentViewId}&mode=agendas`;
+      const r = await fetchText(feedUrl, 9000);
+      const items = (r.text ? parseRss(r.text) : [])
+        .map((it) => ({ link: it.link, body: bodyOf(it.title), date: parseTitleDate(it.title) }))
+        .filter((it) => it.link && it.body && it.date);
+      const { data: cands } = await admin
+        .from("civic_events")
+        .select("id,title,starts_at,source_url")
+        .eq("source", `ingest:${src.slug}`)
+        .eq("status", "pending_review")
+        .gte("starts_at", new Date().toISOString());
+      let enriched = 0;
+      for (const c of (cands ?? []) as { id: string; title: string; starts_at: string; source_url: string | null }[]) {
+        if (c.source_url && /AgendaViewer/i.test(c.source_url)) continue; // already enriched
+        const cb = bodyOf(c.title);
+        const cd = easternYMD(c.starts_at);
+        if (!cb || !cd) continue;
+        const match = items.find((it) => it.body === cb && sameYMD(it.date, cd));
+        if (!match || !match.link) continue;
+        const a = await fetchText(match.link, 8000);
+        const dcItems = a.text ? extractDcItems(htmlToText(a.text)) : [];
+        if (!dcItems.length) continue;
+        const label = cb === "pc" ? "Planning Commission" : "Board of Supervisors";
+        await admin
+          .from("civic_events")
+          .update({
+            title: `${label} public hearing — data-center item${dcItems.length > 1 ? "s" : ""}`.slice(0, 200),
+            description: `Agenda includes data-center matter(s): ${dcItems.join("; ")}. Auto-detected from the county agenda — verify and confirm to publish.`.slice(0, 1000),
+            source_url: match.link,
+            updated_at: new Date().toISOString(),
+          })
+          .eq("id", c.id);
+        enriched++;
+      }
+      report.push({ source: src.slug, enrichedFromAgenda: enriched });
     }
   }
 

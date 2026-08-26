@@ -15,7 +15,7 @@ export type IngestSource = {
   icalFeeds: string[];
   // Optional Granicus agenda source for v2 enrichment (scan agendas for
   // data-center items and attach them to the matching hearing candidate).
-  granicus?: { base: string; viewIds: string[] };
+  granicus?: { base: string; currentViewId: string; viewIds: string[] };
 };
 
 function envList(name: string, fallback: string[]): string[] {
@@ -43,7 +43,9 @@ export const SOURCES: IngestSource[] = [
     ]),
     granicus: {
       base: process.env.INGEST_LOUDOUN_GRANICUS_BASE || "https://loudoun.granicus.com",
-      viewIds: envList("INGEST_LOUDOUN_GRANICUS_VIEWS", ["88", "90", "77", "86", "89", "2", "3"]),
+      // view 90 is the current "all meetings" agenda feed (verified live).
+      currentViewId: process.env.INGEST_LOUDOUN_GRANICUS_CURRENT || "90",
+      viewIds: envList("INGEST_LOUDOUN_GRANICUS_VIEWS", ["90", "88", "77", "86", "89"]),
     },
   },
 ];
