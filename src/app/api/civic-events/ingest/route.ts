@@ -191,8 +191,13 @@ export async function GET(request: Request) {
       const feedUrl = `${src.granicus.base}/ViewPublisherRSS.php?view_id=${src.granicus.currentViewId}&mode=agendas`;
       const r = await fetchText(feedUrl, 9000);
       const items = (r.text ? parseRss(r.text) : [])
-        .map((it) => ({ link: it.link, body: bodyOf(it.title), date: parseTitleDate(it.title) }))
-        .filter((it) => it.link && it.body && it.date);
+        .map((it) => ({
+          link: it.link,
+          body: bodyOf(it.title),
+          date: parseTitleDate(it.title),
+          ph: /public hearing/i.test(it.title),
+        }))
+        .filter((it) => it.link && it.body && it.date && it.ph);
       const { data: cands } = await admin
         .from("civic_events")
         .select("id,title,starts_at,source_url")
