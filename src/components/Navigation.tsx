@@ -7,10 +7,9 @@ import { usePathname } from "next/navigation";
 import NotificationsBell from "@/src/components/NotificationsBell";
 
 const NAV_LINKS: [string, string][] = [
-  ["/map", "Explore"],
+  ["/map", "Map"],
   ["/decisions", "Decisions"],
-  ["/compare", "Compare"],
-  ["/changes", "Changes"],
+  ["/near", "Look up an address"],
   ["/about", "About"],
 ];
 
@@ -65,8 +64,15 @@ export default function Navigation() {
     <nav className="border-b border-white/10 bg-ground/80 backdrop-blur-sm sticky top-0 z-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
-          <Link href="/" className="text-xl font-semibold tracking-tight flex items-center gap-2">
-            <span className="inline-block w-2.5 h-2.5 rounded-full bg-brand" />
+          <Link
+            href="/"
+            className="font-display text-xl font-bold tracking-tight flex items-center gap-2.5"
+          >
+            <svg width="24" height="24" viewBox="0 0 26 26" fill="none" aria-hidden="true" className="shrink-0">
+              <circle cx="13" cy="13" r="11.5" stroke="var(--color-brand)" strokeWidth="1.4" opacity="0.4" />
+              <circle cx="13" cy="13" r="7.3" stroke="var(--color-brand)" strokeWidth="1.4" opacity="0.7" />
+              <circle cx="13" cy="13" r="3" fill="var(--color-brand)" />
+            </svg>
             Arounded
           </Link>
 
