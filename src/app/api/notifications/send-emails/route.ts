@@ -110,7 +110,7 @@ function digestHtml(
   </body></html>`;
 }
 
-export async function GET() {
+export async function GET(request: Request) {
   const apiKey = process.env.RESEND_API_KEY;
   if (!apiKey) {
     return NextResponse.json({ ok: true, skipped: "RESEND_API_KEY not set" });
@@ -125,6 +125,38 @@ export async function GET() {
     .split(",")
     .map((s) => s.trim().toLowerCase())
     .filter(Boolean);
+
+  // One-off delivery test: /api/notifications/send-emails?test=1 sends a single
+  // sample digest so you can confirm Resend works. It only ever emails the first
+  // allowlisted address, so it can't reach real users.
+  if (new URL(request.url).searchParams.get("test") === "1") {
+    if (allow.length === 0) {
+      return NextResponse.json(
+        { ok: false, error: "Set EMAIL_ALLOWLIST first — the test only sends to an allowlisted address." },
+        { status: 400 }
+      );
+    }
+    const to = allow[0];
+    const sample: NotificationRow[] = [
+      {
+        id: "test",
+        user_id: "test",
+        type: "hearing_reminder",
+        title: "Your Arounded email alerts are working",
+        body: "This is a one-off test of your Resend setup. Real alerts about decisions near your saved places will look like this.",
+        link: "/decisions",
+        data: null,
+      },
+    ];
+    const unsubUrl = `${siteUrl}/api/notifications/unsubscribe?token=test`;
+    const res = await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
+      body: JSON.stringify({ from, to, subject: "Test alert from Arounded", html: digestHtml(sample, new Map(), siteUrl, unsubUrl) }),
+    });
+    const detail = await res.text();
+    return NextResponse.json({ ok: res.ok, test: true, to, status: res.status, resend: detail.slice(0, 500) });
+  }
 
   try {
     const supabase = getSupabase();
