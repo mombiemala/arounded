@@ -4,6 +4,7 @@ import { Suspense, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import Navigation from "@/src/components/Navigation";
+import Footer from "@/src/components/Footer";
 import { supabase } from "@/lib/supabaseClient";
 import {
   geocodeForward,
@@ -92,12 +93,12 @@ function Search({ onSelect }: { onSelect: (p: PlaceHit) => void }) {
         onKeyDown={(e) => e.key === "Enter" && results[0] && onSelect(results[0])}
         placeholder="Enter an address, city, or ZIP"
         aria-label="Address"
-        className="w-full rounded-lg border border-white/15 bg-white/5 px-3 py-2.5 text-sm outline-none placeholder:text-white/40 focus:border-brand/60 transition-colors"
+        className="w-full rounded-lg border border-line bg-hover px-3 py-2.5 text-sm outline-none placeholder:text-ink-faint focus:border-brand/60 transition-colors"
       />
       {results.length > 0 && (
-        <div className="absolute z-10 mt-1 w-full rounded-lg border border-white/10 overflow-hidden bg-ground shadow-lg">
+        <div className="absolute z-10 mt-1 w-full rounded-lg border border-line overflow-hidden bg-ground shadow-lg">
           {results.slice(0, 5).map((r) => (
-            <button key={r.id} onClick={() => onSelect(r)} className="w-full text-left px-3 py-2 text-sm hover:bg-white/10 border-b border-white/5 last:border-b-0">
+            <button key={r.id} onClick={() => onSelect(r)} className="w-full text-left px-3 py-2 text-sm hover:bg-surface-2 border-b border-line last:border-b-0">
               {r.place_name}
             </button>
           ))}
@@ -161,7 +162,7 @@ function NearInner() {
   };
 
   return (
-    <div className="min-h-screen bg-ground text-white">
+    <div className="min-h-screen bg-ground text-ink">
       <Navigation />
       <section className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
         <div className="font-mono text-xs uppercase tracking-[0.16em] text-brand mb-3">
@@ -178,14 +179,14 @@ function NearInner() {
         {!place ? (
           <Search onSelect={select} />
         ) : (
-          <div className="rounded-2xl border border-white/10 overflow-hidden">
+          <div className="rounded-2xl border border-line overflow-hidden">
             {/* Card header */}
-            <div className="p-6 border-b border-white/10 flex items-start justify-between gap-4">
+            <div className="p-6 border-b border-line flex items-start justify-between gap-4">
               <div className="min-w-0">
                 <div className="text-lg font-semibold truncate">{place.place_name}</div>
                 <div className="text-xs opacity-55 mt-1">Within {RADIUS_MI} miles · {new Date().toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}</div>
               </div>
-              <button onClick={share} className="shrink-0 text-xs px-3 py-1.5 rounded-lg border border-white/20 hover:border-brand/50 hover:text-brand transition-colors">
+              <button onClick={share} className="shrink-0 text-xs px-3 py-1.5 rounded-lg border border-line hover:border-brand/50 hover:text-brand transition-colors">
                 {copied ? "Copied!" : "Share"}
               </button>
             </div>
@@ -193,7 +194,7 @@ function NearInner() {
             {loading ? (
               <div className="p-6 text-sm opacity-60">Gathering what&apos;s nearby…</div>
             ) : (
-              <div className="divide-y divide-white/10">
+              <div className="divide-y divide-line">
                 {/* Data centers — proposed emphasized */}
                 <div className="p-6">
                   <div className="font-mono text-[10px] uppercase tracking-[0.14em] text-brand/80 mb-3">Data centers nearby</div>
@@ -262,7 +263,7 @@ function NearInner() {
                     <Link href={`/map?lat=${place.center[1]}&lng=${place.center[0]}`} className="px-4 py-2 rounded-lg bg-brand text-brand-ink text-sm font-medium hover:bg-brand-strong transition-colors">
                       Explore on the map
                     </Link>
-                    <button onClick={() => { setPlace(null); router.replace("/near", { scroll: false }); }} className="px-4 py-2 rounded-lg border border-white/20 text-sm hover:border-white/40 transition-colors">
+                    <button onClick={() => { setPlace(null); router.replace("/near", { scroll: false }); }} className="px-4 py-2 rounded-lg border border-line text-sm hover:border-line transition-colors">
                       Check another address
                     </button>
                   </div>
@@ -280,6 +281,7 @@ export default function NearPage() {
   return (
     <Suspense fallback={<div className="min-h-screen bg-ground" />}>
       <NearInner />
+      <Footer />
     </Suspense>
   );
 }

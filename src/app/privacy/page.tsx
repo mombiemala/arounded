@@ -4,12 +4,12 @@ import { HeroDecor } from "@/src/components/Decor";
 
 const eyebrow = "font-mono text-xs uppercase tracking-[0.16em] text-brand mb-3";
 const wrap = "max-w-3xl mx-auto px-4 sm:px-6 lg:px-8";
-const section = "py-14 border-t border-white/10";
+const section = "py-14 border-t border-line";
 const LAST_UPDATED = "January 2026";
 
 export default function PrivacyPage() {
   return (
-    <div className="min-h-screen bg-ground text-white relative overflow-hidden">
+    <div className="min-h-screen bg-ground text-ink relative overflow-hidden">
       <Navigation />
       <HeroDecor variant="plots" />
 
@@ -27,7 +27,7 @@ export default function PrivacyPage() {
             You can explore the map without an account. If you choose to sign in, we store only
             what&apos;s needed to save places and track history.
           </p>
-          <p className="mt-4 text-sm opacity-60 leading-relaxed border-l-2 border-white/15 pl-4">
+          <p className="mt-4 text-sm opacity-60 leading-relaxed border-l-2 border-line pl-4">
             This is a plain-language privacy statement for the MVP. As features expand, we&apos;ll
             update it — and we&apos;ll keep changes easy to understand.
           </p>
@@ -58,7 +58,7 @@ export default function PrivacyPage() {
           <div className={eyebrow}>With an account</div>
           <h2 className="text-2xl sm:text-3xl font-bold tracking-tight mb-6">Data stored with login</h2>
           <p className="opacity-80 leading-relaxed max-w-2xl text-[15px] mb-5">When you create an account, we store:</p>
-          <dl className="divide-y divide-white/10 border-t border-white/10 max-w-2xl">
+          <dl className="divide-y divide-line border-t border-line max-w-2xl">
             {[
               { t: "Email address", d: "Used for authentication and account access." },
               { t: "Saved places", d: "Places you explicitly save (label + coordinates)." },
@@ -88,7 +88,7 @@ export default function PrivacyPage() {
             it&apos;s used to display results — and it&apos;s only stored if you explicitly save it.
           </p>
           <p className="opacity-80 leading-relaxed max-w-2xl text-[15px] mb-4">We do not collect or store:</p>
-          <ul className="divide-y divide-white/10 border-t border-white/10 max-w-2xl text-sm">
+          <ul className="divide-y divide-line border-t border-line max-w-2xl text-sm">
             {[
               "Your device's continuous GPS trail",
               "Real-time background location tracking",
@@ -110,7 +110,7 @@ export default function PrivacyPage() {
           <p className="opacity-80 leading-relaxed max-w-2xl text-[15px] mb-5">
             Arounded relies on a small set of services to operate:
           </p>
-          <dl className="divide-y divide-white/10 border-t border-white/10 max-w-2xl">
+          <dl className="divide-y divide-line border-t border-line max-w-2xl">
             {[
               { t: "Supabase", d: "Authentication + database storage for accounts/saved places." },
               { t: "Mapbox", d: "Map tiles + geocoding/search." },
@@ -179,7 +179,7 @@ export default function PrivacyPage() {
           <div className={eyebrow}>You&apos;re in control</div>
           <h2 className="text-2xl sm:text-3xl font-bold tracking-tight mb-6">Your choices</h2>
           <p className="opacity-80 leading-relaxed max-w-2xl text-[15px] mb-4">You can:</p>
-          <ul className="divide-y divide-white/10 border-t border-white/10 max-w-2xl text-sm">
+          <ul className="divide-y divide-line border-t border-line max-w-2xl text-sm">
             {[
               "Use Arounded without an account",
               "View, edit, or remove saved places",
@@ -212,7 +212,7 @@ export default function PrivacyPage() {
         </section>
 
         {/* Back to map */}
-        <div className="pt-10 border-t border-white/10">
+        <div className="pt-10 border-t border-line">
           <Link
             href="/map"
             className="inline-block px-6 py-3 bg-brand text-brand-ink rounded-lg font-medium hover:bg-brand-strong transition-colors"

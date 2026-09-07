@@ -2,44 +2,105 @@
 @import "tailwindcss";
 
 /* ─────────────────────────────────────────────────────────────
-   Arounded brand tokens — a warm, neighborly, cartographic identity.
-   One bold civic green is the accent; warm naturals (clay / honey / sky)
-   are reserved for map DATA (proposed vs. operating vs. air), not chrome.
-   Values below are the dark-mode palette (the app currently renders dark);
-   a light palette follows once pages are migrated off hardcoded white.
+   Arounded brand tokens — warm, neighborly, cartographic.
+   One bold civic green accent; warm naturals (clay / honey / sky)
+   reserved for map DATA, not chrome. Semantic ink/surface/line tokens
+   flip between light and dark; the bare :root below is the LIGHT palette,
+   redefined for dark under prefers-color-scheme and [data-theme="dark"].
    ───────────────────────────────────────────────────────────── */
 @theme {
-  --color-ground: #15130e;        /* warm near-black ground */
-  --color-ground-soft: #1f1c15;   /* raised surface */
-  --color-surface: #1f1c15;
-  --color-brand: #63bc7c;         /* civic green — the one accent */
-  --color-brand-strong: #7ecb92;
-  --color-brand-ink: #0d2116;     /* text on green */
-  --color-clay: #db8a5c;          /* data: proposed / construction */
-  --color-honey: #e4b25c;         /* data: warm signal */
-  --color-sun: #e4b25c;           /* alias kept for existing usage */
-  --color-sky: #6baac0;           /* data: air / water */
+  /* grounds & surfaces (light) */
+  --color-ground: #f0ede3;
+  --color-ground-soft: #f5f2e9;
+  --color-surface: #fbf9f3;
+  --color-surface-2: #f1ede3;
+  --color-hover: rgba(37, 34, 28, 0.05);
+
+  /* ink (light) */
+  --color-ink: #25221c;
+  --color-ink-soft: #6a6355;
+  --color-ink-faint: #948c7c;
+
+  /* lines (light) */
+  --color-line: rgba(37, 34, 28, 0.14);
+  --color-line-soft: rgba(37, 34, 28, 0.08);
+
+  /* brand + data */
+  --color-brand: #2f7a4e;
+  --color-brand-strong: #256840;
+  --color-brand-ink: #fbfdf9;
+  --color-clay: #c36638;
+  --color-honey: #d69b36;
+  --color-sun: #d69b36;
+  --color-sky: #3d7e97;
 
   --font-display: var(--ff-display), ui-sans-serif, system-ui, sans-serif;
   --font-sans: var(--ff-body), ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   --font-mono: var(--ff-mono), ui-monospace, "SFMono-Regular", monospace;
 }
 
-:root {
-  --radius: 0.65rem;
-  --ink: #f1eadd;         /* warm off-white body text */
+/* Dark palette — applied when the OS is dark (and the user hasn't forced light),
+   when the theme toggle sets dark, and inside any [data-theme="dark"] subtree
+   (the map keeps its dark chrome in every theme). */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme]) {
+    --color-ground: #15130e;
+    --color-ground-soft: #1f1c15;
+    --color-surface: #1f1c15;
+    --color-surface-2: #252118;
+    --color-hover: rgba(241, 234, 221, 0.06);
+    --color-ink: #f1eadd;
+    --color-ink-soft: #b2a994;
+    --color-ink-faint: #7e7565;
+    --color-line: rgba(241, 234, 221, 0.14);
+    --color-line-soft: rgba(241, 234, 221, 0.07);
+    --color-brand: #63bc7c;
+    --color-brand-strong: #7ecb92;
+    --color-brand-ink: #0d2116;
+    --color-clay: #db8a5c;
+    --color-honey: #e4b25c;
+    --color-sun: #e4b25c;
+    --color-sky: #6baac0;
+    color-scheme: dark;
+  }
 }
-
-html {
+[data-theme="dark"] {
+  --color-ground: #15130e;
+  --color-ground-soft: #1f1c15;
+  --color-surface: #1f1c15;
+  --color-surface-2: #252118;
+  --color-hover: rgba(241, 234, 221, 0.06);
+  --color-ink: #f1eadd;
+  --color-ink-soft: #b2a994;
+  --color-ink-faint: #7e7565;
+  --color-line: rgba(241, 234, 221, 0.14);
+  --color-line-soft: rgba(241, 234, 221, 0.07);
+  --color-brand: #63bc7c;
+  --color-brand-strong: #7ecb92;
+  --color-brand-ink: #0d2116;
+  --color-clay: #db8a5c;
+  --color-honey: #e4b25c;
+  --color-sun: #e4b25c;
+  --color-sky: #6baac0;
   color-scheme: dark;
 }
 
+:root {
+  --radius: 0.65rem;
+  color-scheme: light;
+}
+
 body {
-  background: var(--color-ground);
-  color: var(--ink);
+  background-color: var(--color-ground);
+  color: var(--color-ink);
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
+  /* faint cartographic grid, from the line token so it lives in both themes */
+  background-image: linear-gradient(var(--color-line-soft) 1px, transparent 1px),
+    linear-gradient(90deg, var(--color-line-soft) 1px, transparent 1px);
+  background-size: 34px 34px;
+  background-position: -1px -1px;
 }
 
 /* Headlines carry the display face app-wide. */
@@ -54,4 +115,24 @@ h1, h2, h3 {
   outline: 2px solid var(--color-brand);
   outline-offset: 2px;
   border-radius: 6px;
+}
+
+/* Theme-toggle icons: show the icon for the theme you'd switch TO.
+   Pure CSS so there's no React state (avoids hydration + effect churn). */
+.theme-sun { display: none; }
+.theme-moon { display: block; }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme]) .theme-sun { display: block; }
+  :root:not([data-theme]) .theme-moon { display: none; }
+}
+[data-theme="dark"] .theme-sun { display: block; }
+[data-theme="dark"] .theme-moon { display: none; }
+[data-theme="light"] .theme-sun { display: none; }
+[data-theme="light"] .theme-moon { display: block; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
 }

@@ -94,7 +94,7 @@ export default function AdminEventForm({ onCreated }: { onCreated: () => void })
   };
 
   const field =
-    "w-full rounded-lg border border-white/15 bg-white/5 px-3 py-2.5 text-sm outline-none placeholder:text-white/40 focus:border-brand/60 transition-colors";
+    "w-full rounded-lg border border-line bg-hover px-3 py-2.5 text-sm outline-none placeholder:text-ink-faint focus:border-brand/60 transition-colors";
   const labelCls = "block text-xs font-medium mb-1.5 opacity-80";
 
   return (
@@ -120,7 +120,7 @@ export default function AdminEventForm({ onCreated }: { onCreated: () => void })
           + Add a hearing
         </button>
       ) : (
-        <form onSubmit={submit} className="space-y-4 rounded-2xl border border-white/10 p-5">
+        <form onSubmit={submit} className="space-y-4 rounded-2xl border border-line p-5">
           <div className="font-mono text-[10px] uppercase tracking-[0.14em] text-brand/80">New hearing</div>
 
           <div>
@@ -140,7 +140,7 @@ export default function AdminEventForm({ onCreated }: { onCreated: () => void })
             <div>
               <label htmlFor="a-loc" className={labelCls}>Location</label>
               {place ? (
-                <div className="flex items-center justify-between gap-2 rounded-lg border border-white/15 bg-white/5 px-3 py-2.5">
+                <div className="flex items-center justify-between gap-2 rounded-lg border border-line bg-hover px-3 py-2.5">
                   <span className="text-sm truncate">{place.place_name}</span>
                   <button type="button" onClick={() => { setPlace(null); setQuery(""); }} className="text-xs opacity-60 hover:opacity-100 shrink-0">Change</button>
                 </div>
@@ -148,9 +148,9 @@ export default function AdminEventForm({ onCreated }: { onCreated: () => void })
                 <div className="relative">
                   <input id="a-loc" value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Address, city, or ZIP" className={field} autoComplete="off" />
                   {results.length > 0 && (
-                    <div className="absolute z-10 mt-1 w-full rounded-lg border border-white/10 overflow-hidden bg-ground shadow-lg">
+                    <div className="absolute z-10 mt-1 w-full rounded-lg border border-line overflow-hidden bg-ground shadow-lg">
                       {results.slice(0, 5).map((r) => (
-                        <button key={r.id} type="button" onClick={() => { setPlace(r); setResults([]); }} className="w-full text-left px-3 py-2 text-sm hover:bg-white/10 border-b border-white/5 last:border-b-0">
+                        <button key={r.id} type="button" onClick={() => { setPlace(r); setResults([]); }} className="w-full text-left px-3 py-2 text-sm hover:bg-surface-2 border-b border-line last:border-b-0">
                           {r.place_name}
                         </button>
                       ))}
@@ -191,7 +191,7 @@ export default function AdminEventForm({ onCreated }: { onCreated: () => void })
             <button type="submit" disabled={submitting} className="px-5 py-2.5 rounded-lg bg-brand text-brand-ink text-sm font-medium hover:bg-brand-strong transition-colors disabled:opacity-50">
               {submitting ? "Saving…" : "Add hearing"}
             </button>
-            <button type="button" onClick={() => { setOpen(false); setMessage(null); }} className="px-5 py-2.5 rounded-lg border border-white/20 text-sm hover:border-white/40 transition-colors">
+            <button type="button" onClick={() => { setOpen(false); setMessage(null); }} className="px-5 py-2.5 rounded-lg border border-line text-sm hover:border-line transition-colors">
               Cancel
             </button>
           </div>

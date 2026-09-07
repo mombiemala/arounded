@@ -77,28 +77,28 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-ground text-white flex items-center justify-center px-4 relative overflow-hidden">
+    <div className="min-h-screen bg-ground text-ink flex items-center justify-center px-4 relative overflow-hidden">
       <div aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden">
         <Glow className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[640px] h-[640px] rounded-full" opacity={0.08} />
         <Rings className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[560px] h-[560px]" opacity={0.07} />
       </div>
       <div className="w-full max-w-md relative">
         {/* Top nav */}
-        <nav className="border-b border-white/10 bg-ground/80 backdrop-blur-sm mb-8">
+        <nav className="border-b border-line bg-ground/80 backdrop-blur-sm mb-8">
           <div className="flex items-center justify-between h-16">
             <Link href="/" className="text-xl font-semibold tracking-tight">
               Arounded
             </Link>
             <Link
               href="/map"
-              className="text-sm text-white/80 hover:text-white transition-colors rounded-lg px-3 py-2 hover:bg-white/5"
+              className="text-sm text-ink-soft hover:text-ink transition-colors rounded-lg px-3 py-2 hover:bg-hover"
             >
               Explore
             </Link>
           </div>
         </nav>
 
-        <div className="rounded-2xl border border-white/10 p-8">
+        <div className="rounded-2xl border border-line p-8">
           <div className="font-mono text-xs uppercase tracking-[0.16em] text-brand mb-3">
             Your places
           </div>
@@ -133,7 +133,7 @@ export default function LoginPage() {
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="you@example.com"
                 required
-                className="w-full px-4 py-3 rounded-lg border border-white/20 bg-ground/50 text-white placeholder-white/40 focus:outline-none focus:border-white/40"
+                className="w-full px-4 py-3 rounded-lg border border-line bg-ground/50 text-ink placeholder-ink-faint focus:outline-none focus:border-line"
                 disabled={loading}
                 autoComplete="email"
               />
@@ -155,15 +155,15 @@ export default function LoginPage() {
           {ENABLE_GOOGLE_AUTH && (
             <>
               <div className="my-6 flex items-center">
-                <div className="flex-1 border-t border-white/10" />
+                <div className="flex-1 border-t border-line" />
                 <span className="px-4 text-sm opacity-60">or</span>
-                <div className="flex-1 border-t border-white/10" />
+                <div className="flex-1 border-t border-line" />
               </div>
 
               <button
                 onClick={handleGoogleLogin}
                 disabled={loading}
-                className="w-full px-6 py-3 border border-white/20 rounded-lg font-medium hover:border-white/40 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full px-6 py-3 border border-line rounded-lg font-medium hover:border-line transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 Continue with Google
               </button>

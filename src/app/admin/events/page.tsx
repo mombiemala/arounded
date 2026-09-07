@@ -65,7 +65,7 @@ export default function AdminEventsPage() {
   };
 
   return (
-    <div className="min-h-screen bg-ground text-white">
+    <div className="min-h-screen bg-ground text-ink">
       <Navigation />
       <section className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
         <div className="font-mono text-xs uppercase tracking-[0.16em] text-brand mb-3">Moderation</div>
@@ -79,14 +79,14 @@ export default function AdminEventsPage() {
         {state === "loading" && <p className="opacity-60 text-sm">Loading…</p>}
 
         {state === "signedout" && (
-          <p className="border-l-2 border-white/15 pl-4 text-sm opacity-70">
+          <p className="border-l-2 border-line pl-4 text-sm opacity-70">
             <Link href="/login" className="text-brand hover:text-brand-strong">Sign in</Link> with an admin
             account to review submissions.
           </p>
         )}
 
         {state === "denied" && (
-          <p className="border-l-2 border-white/15 pl-4 text-sm opacity-70">
+          <p className="border-l-2 border-line pl-4 text-sm opacity-70">
             This area is for moderators. If that should be you, add your email to the admin allowlist or set
             your account as an admin.
           </p>
@@ -101,13 +101,13 @@ export default function AdminEventsPage() {
         )}
 
         {state === "ready" && events.length === 0 && (
-          <p className="border-l-2 border-white/15 pl-4 text-sm opacity-70">
+          <p className="border-l-2 border-line pl-4 text-sm opacity-70">
             Nothing waiting for review. New community submissions will show up here.
           </p>
         )}
 
         {state === "ready" && events.length > 0 && (
-          <ul className="divide-y divide-white/10 border-t border-white/10">
+          <ul className="divide-y divide-line border-t border-line">
             {events.map((e) => {
               const jz = Array.isArray(e.jurisdiction) ? e.jurisdiction[0] : e.jurisdiction;
               const place = jz ? [jz.name, jz.state].filter(Boolean).join(", ") : null;
@@ -125,7 +125,7 @@ export default function AdminEventsPage() {
                             Auto-ingested
                           </span>
                         ) : (
-                          <span className="font-mono text-[9px] uppercase tracking-[0.08em] px-1.5 py-0.5 rounded bg-white/10 opacity-60">
+                          <span className="font-mono text-[9px] uppercase tracking-[0.08em] px-1.5 py-0.5 rounded bg-surface-2 opacity-60">
                             Community
                           </span>
                         )}
@@ -165,7 +165,7 @@ export default function AdminEventsPage() {
                       <button
                         onClick={() => moderate(e.id, "reject")}
                         disabled={busy === e.id}
-                        className="px-3 py-1.5 rounded-lg border border-white/20 text-sm hover:border-clay hover:text-clay transition-colors disabled:opacity-50"
+                        className="px-3 py-1.5 rounded-lg border border-line text-sm hover:border-clay hover:text-clay transition-colors disabled:opacity-50"
                       >
                         Reject
                       </button>

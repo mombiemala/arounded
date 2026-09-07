@@ -1,5 +1,6 @@
 import Link from "next/link";
 import Navigation from "@/src/components/Navigation";
+import Footer from "@/src/components/Footer";
 import { HeroDecor } from "@/src/components/Decor";
 import DecisionSubmitForm from "@/src/components/DecisionSubmitForm";
 import { supabase } from "@/lib/supabaseClient";
@@ -19,7 +20,7 @@ type Row = Omit<CivicEvent, "jurisdiction"> & {
 };
 
 function sourceBadge(e: Row): { label: string; cls: string } {
-  if (e.source === "sample") return { label: "Example", cls: "text-white/50 border-white/15" };
+  if (e.source === "sample") return { label: "Example", cls: "text-ink-faint border-line" };
   if (e.confirmed) return { label: "Confirmed", cls: "text-brand border-brand/40" };
   return { label: "Community · unconfirmed", cls: "text-[#ffd43b] border-[#ffd43b]/40" };
 }
@@ -48,7 +49,7 @@ export default async function DecisionsPage() {
     });
 
   return (
-    <div className="min-h-screen bg-ground text-white relative overflow-hidden">
+    <div className="min-h-screen bg-ground text-ink relative overflow-hidden">
       <Navigation />
       <HeroDecor variant="plots" />
 
@@ -67,11 +68,11 @@ export default async function DecisionsPage() {
         </p>
 
         {rows.length === 0 ? (
-          <p className="border-l-2 border-white/15 pl-4 text-sm opacity-70 leading-relaxed">
+          <p className="border-l-2 border-line pl-4 text-sm opacity-70 leading-relaxed">
             No upcoming decisions logged yet. Know about one? Add it below.
           </p>
         ) : (
-          <ul className="divide-y divide-white/10 border-t border-white/10">
+          <ul className="divide-y divide-line border-t border-line">
             {rows.map((e) => {
               const target = eventTarget(e);
               const badge = sourceBadge(e);
@@ -137,11 +138,12 @@ export default async function DecisionsPage() {
           <DecisionSubmitForm />
         </div>
 
-        <p className="mt-10 text-xs opacity-50 leading-relaxed border-l-2 border-white/15 pl-4 max-w-2xl">
+        <p className="mt-10 text-xs opacity-50 leading-relaxed border-l-2 border-line pl-4 max-w-2xl">
           Decision Alerts is informational and community-supported. Dates and processes change —
           always confirm the time and how to participate with the jurisdiction. This isn&apos;t legal advice.
         </p>
       </section>
+      <Footer />
     </div>
   );
 }

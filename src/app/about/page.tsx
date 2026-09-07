@@ -1,11 +1,12 @@
 import Link from "next/link";
 import Navigation from "@/src/components/Navigation";
+import Footer from "@/src/components/Footer";
 import SourceLink from "@/src/components/SourceLink";
 import { HeroDecor } from "@/src/components/Decor";
 
 const eyebrow = "font-mono text-xs uppercase tracking-[0.16em] text-brand mb-3";
 const wrap = "max-w-3xl mx-auto px-4 sm:px-6 lg:px-8";
-const section = "py-16 border-t border-white/10";
+const section = "py-16 border-t border-line";
 
 const LAYERS = [
   {
@@ -67,7 +68,7 @@ const PRINCIPLES = [
 
 export default function AboutPage() {
   return (
-    <div className="min-h-screen bg-ground text-white">
+    <div className="min-h-screen bg-ground text-ink">
       <Navigation />
 
       <div className="relative overflow-hidden">
@@ -111,7 +112,7 @@ export default function AboutPage() {
           <h2 className="text-2xl sm:text-3xl font-bold tracking-tight mb-8">What&apos;s on the map</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-7">
             {LAYERS.map((l) => (
-              <div key={l.t} className="border-t border-white/10 pt-4">
+              <div key={l.t} className="border-t border-line pt-4">
                 <h3 className="font-semibold mb-1">{l.t}</h3>
                 <div className="text-xs opacity-55 mb-1.5">{l.src}</div>
                 <p className="text-sm opacity-75 leading-relaxed">{l.d}</p>
@@ -124,7 +125,7 @@ export default function AboutPage() {
         <section className={section}>
           <div className={eyebrow}>What we stand for</div>
           <h2 className="text-2xl sm:text-3xl font-bold tracking-tight mb-8">Our principles</h2>
-          <div className="divide-y divide-white/10 border-t border-white/10 max-w-2xl">
+          <div className="divide-y divide-line border-t border-line max-w-2xl">
             {PRINCIPLES.map((p) => (
               <div key={p.t} className="grid sm:grid-cols-[220px_1fr] gap-1 sm:gap-6 py-5">
                 <h3 className="font-semibold flex items-start gap-2">
@@ -138,8 +139,8 @@ export default function AboutPage() {
         </section>
 
         {/* Disclaimer + CTA */}
-        <div className="pt-10 border-t border-white/10">
-          <p className="text-sm opacity-60 leading-relaxed max-w-2xl border-l-2 border-white/15 pl-4 mb-8">
+        <div className="pt-10 border-t border-line">
+          <p className="text-sm opacity-60 leading-relaxed max-w-2xl border-l-2 border-line pl-4 mb-8">
             Arounded provides informational environmental signals. It is not medical advice and not an
             emergency alert system. For urgent health or safety decisions, use official local and
             federal guidance.
@@ -153,7 +154,7 @@ export default function AboutPage() {
             </Link>
             <Link
               href="/changes"
-              className="px-6 py-3 border border-white/20 rounded-lg font-medium hover:border-brand/60 hover:text-brand transition-colors text-center"
+              className="px-6 py-3 border border-line rounded-lg font-medium hover:border-brand/60 hover:text-brand transition-colors text-center"
             >
               See what&apos;s changed
             </Link>
@@ -161,6 +162,7 @@ export default function AboutPage() {
         </div>
         </div>
       </div>
+      <Footer />
     </div>
   );
 }
