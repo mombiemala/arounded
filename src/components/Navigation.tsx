@@ -43,6 +43,19 @@ export default function Navigation() {
     };
   }, [showUserMenu]);
 
+  const toggleTheme = () => {
+    const root = document.documentElement;
+    const explicit = root.getAttribute("data-theme");
+    const isDark = explicit
+      ? explicit === "dark"
+      : window.matchMedia("(prefers-color-scheme: dark)").matches;
+    const next = isDark ? "light" : "dark";
+    root.setAttribute("data-theme", next);
+    try {
+      localStorage.setItem("arounded-theme", next);
+    } catch {}
+  };
+
   const navLink = (href: string, label: string, block = false) => {
     const active = pathname === href;
     return (
@@ -52,7 +65,7 @@ export default function Navigation() {
         className={[
           "text-sm transition-colors rounded-lg px-3 py-2",
           block ? "block" : "",
-          active ? "bg-brand/15 text-brand" : "text-white/80 hover:text-white hover:bg-white/5",
+          active ? "bg-brand/15 text-brand" : "text-ink-soft hover:text-ink hover:bg-hover",
         ].join(" ")}
       >
         {label}
@@ -61,7 +74,7 @@ export default function Navigation() {
   };
 
   return (
-    <nav className="border-b border-white/10 bg-ground/80 backdrop-blur-sm sticky top-0 z-50">
+    <nav className="border-b border-line bg-ground/80 backdrop-blur-sm sticky top-0 z-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           <Link
@@ -86,10 +99,24 @@ export default function Navigation() {
 
             {user && <NotificationsBell />}
 
+            <button
+              onClick={toggleTheme}
+              aria-label="Switch light or dark theme"
+              className="rounded-lg p-2 text-ink-soft hover:text-ink hover:bg-hover transition-colors"
+            >
+              <svg className="theme-moon w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
+                <path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8Z" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+              <svg className="theme-sun w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
+                <circle cx="12" cy="12" r="4.5" />
+                <path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4" strokeLinecap="round" />
+              </svg>
+            </button>
+
             {/* Mobile menu toggle */}
             <button
               onClick={() => setShowMobileMenu((v) => !v)}
-              className="md:hidden text-white/80 hover:text-white rounded-lg p-2 hover:bg-white/5 transition-colors"
+              className="md:hidden text-ink-soft hover:text-ink rounded-lg p-2 hover:bg-hover transition-colors"
               aria-label="Menu"
               aria-expanded={showMobileMenu}
             >
@@ -107,7 +134,7 @@ export default function Navigation() {
                 <div className="relative" ref={menuRef}>
                   <button
                     onClick={() => setShowUserMenu((v) => !v)}
-                    className="text-sm rounded-lg px-3 py-2 text-white/80 hover:text-white hover:bg-white/5 transition-colors flex items-center gap-2"
+                    className="text-sm rounded-lg px-3 py-2 text-ink-soft hover:text-ink hover:bg-hover transition-colors flex items-center gap-2"
                     aria-haspopup="menu"
                     aria-expanded={showUserMenu}
                   >
@@ -132,10 +159,10 @@ export default function Navigation() {
 
                   {showUserMenu && (
                     <div
-                      className="absolute right-0 mt-2 w-56 border border-white/10 rounded-xl bg-ground/95 backdrop-blur-sm shadow-lg overflow-hidden"
+                      className="absolute right-0 mt-2 w-56 border border-line rounded-xl bg-ground/95 backdrop-blur-sm shadow-lg overflow-hidden"
                       role="menu"
                     >
-                      <div className="p-3 border-b border-white/10">
+                      <div className="p-3 border-b border-line">
                         <p className="text-xs opacity-60">Signed in as</p>
                         <p className="text-sm truncate">{user.email}</p>
                       </div>
@@ -143,7 +170,7 @@ export default function Navigation() {
                       <Link
                         href="/map"
                         onClick={() => setShowUserMenu(false)}
-                        className="block px-3 py-2 text-sm hover:bg-white/10 transition-colors"
+                        className="block px-3 py-2 text-sm hover:bg-surface-2 transition-colors"
                         role="menuitem"
                       >
                         My places
@@ -155,7 +182,7 @@ export default function Navigation() {
                           await signOut();
                           setShowUserMenu(false);
                         }}
-                        className="w-full text-left px-3 py-2 text-sm hover:bg-white/10 transition-colors"
+                        className="w-full text-left px-3 py-2 text-sm hover:bg-surface-2 transition-colors"
                         role="menuitem"
                       >
                         Sign out
@@ -167,11 +194,11 @@ export default function Navigation() {
                 <div className="flex items-center gap-2">
                   <Link
                     href="/login"
-                    className="text-sm rounded-lg px-3 py-2 border border-white/15 hover:border-white/30 transition-colors text-white"
+                    className="text-sm rounded-lg px-3 py-2 border border-line hover:border-ink-soft transition-colors text-ink"
                   >
                     Sign in
                   </Link>
-                  <span className="hidden md:inline text-xs text-white/50">
+                  <span className="hidden md:inline text-xs text-ink-faint">
                     to save places
                   </span>
                 </div>
@@ -182,7 +209,7 @@ export default function Navigation() {
 
         {/* Mobile menu */}
         {showMobileMenu && (
-          <div className="md:hidden border-t border-white/10 py-2" role="menu">
+          <div className="md:hidden border-t border-line py-2" role="menu">
             {NAV_LINKS.map(([href, label]) => (
               <span key={href} className="block">
                 {navLink(href, label, true)}

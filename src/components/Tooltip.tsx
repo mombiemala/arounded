@@ -20,7 +20,7 @@ export default function Tooltip({
       </span>
       <span
         role="tooltip"
-        className="pointer-events-none absolute bottom-full left-1/2 z-50 mb-2 w-max max-w-[240px] -translate-x-1/2 rounded-lg border border-white/10 bg-[#0f1815] px-3 py-2 text-xs font-normal normal-case tracking-normal leading-relaxed text-white/90 shadow-lg opacity-0 translate-y-1 transition-all duration-150 group-hover:opacity-100 group-hover:translate-y-0 group-focus-within:opacity-100 group-focus-within:translate-y-0"
+        className="pointer-events-none absolute bottom-full left-1/2 z-50 mb-2 w-max max-w-[240px] -translate-x-1/2 rounded-lg border border-line bg-[#0f1815] px-3 py-2 text-xs font-normal normal-case tracking-normal leading-relaxed text-ink shadow-lg opacity-0 translate-y-1 transition-all duration-150 group-hover:opacity-100 group-hover:translate-y-0 group-focus-within:opacity-100 group-focus-within:translate-y-0"
       >
         {content}
       </span>

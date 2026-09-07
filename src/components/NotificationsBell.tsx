@@ -41,8 +41,8 @@ function SwitchRow({
       <span className="text-xs opacity-80">{label}</span>
       <span className="relative inline-flex items-center shrink-0">
         <input type="checkbox" className="peer sr-only" checked={checked} onChange={onChange} aria-label={label} />
-        <span className="block w-9 h-5 rounded-full bg-white/15 peer-checked:bg-brand transition-colors peer-focus-visible:ring-2 peer-focus-visible:ring-brand peer-focus-visible:ring-offset-2 peer-focus-visible:ring-offset-ground" />
-        <span className="pointer-events-none absolute left-[3px] top-1/2 -translate-y-1/2 translate-x-0 peer-checked:translate-x-4 w-3.5 h-3.5 rounded-full bg-white shadow-sm transition-transform" />
+        <span className="block w-9 h-5 rounded-full bg-surface-2 peer-checked:bg-brand transition-colors peer-focus-visible:ring-2 peer-focus-visible:ring-brand peer-focus-visible:ring-offset-2 peer-focus-visible:ring-offset-ground" />
+        <span className="pointer-events-none absolute left-[3px] top-1/2 -translate-y-1/2 translate-x-0 peer-checked:translate-x-4 w-3.5 h-3.5 rounded-full bg-surface shadow-sm transition-transform" />
       </span>
     </label>
   );
@@ -154,7 +154,7 @@ export default function NotificationsBell() {
     <div className="relative" ref={menuRef}>
       <button
         onClick={() => setOpen((v) => !v)}
-        className="relative rounded-lg p-2 text-white/80 hover:text-white hover:bg-white/5 transition-colors"
+        className="relative rounded-lg p-2 text-ink-soft hover:text-ink hover:bg-hover transition-colors"
         aria-label={`Notifications${unread ? ` (${unread} unread)` : ""}`}
         aria-haspopup="menu"
         aria-expanded={open}
@@ -168,7 +168,7 @@ export default function NotificationsBell() {
           />
         </svg>
         {unread > 0 && (
-          <span className="absolute top-1 right-1 min-w-[16px] h-4 px-1 rounded-full bg-red-500 text-white text-[10px] font-semibold flex items-center justify-center">
+          <span className="absolute top-1 right-1 min-w-[16px] h-4 px-1 rounded-full bg-red-500 text-ink text-[10px] font-semibold flex items-center justify-center">
             {unread > 9 ? "9+" : unread}
           </span>
         )}
@@ -176,10 +176,10 @@ export default function NotificationsBell() {
 
       {open && (
         <div
-          className="absolute right-0 mt-2 w-80 max-w-[calc(100vw-2rem)] border border-white/10 rounded-xl bg-ground/95 backdrop-blur-sm shadow-lg overflow-hidden z-50"
+          className="absolute right-0 mt-2 w-80 max-w-[calc(100vw-2rem)] border border-line rounded-xl bg-ground/95 backdrop-blur-sm shadow-lg overflow-hidden z-50"
           role="menu"
         >
-          <div className="flex items-center justify-between px-3 py-2 border-b border-white/10">
+          <div className="flex items-center justify-between px-3 py-2 border-b border-line">
             <span className="text-sm font-medium">Notifications</span>
             {unread > 0 && (
               <button onClick={markAllRead} className="text-xs opacity-70 hover:opacity-100 underline">
@@ -199,7 +199,7 @@ export default function NotificationsBell() {
                 <button
                   key={n.id}
                   onClick={() => openItem(n)}
-                  className={`w-full text-left px-3 py-3 border-b border-white/5 last:border-b-0 hover:bg-white/5 transition-colors ${
+                  className={`w-full text-left px-3 py-3 border-b border-line last:border-b-0 hover:bg-hover transition-colors ${
                     n.read_at ? "opacity-60" : ""
                   }`}
                   role="menuitem"
@@ -219,7 +219,7 @@ export default function NotificationsBell() {
             </div>
           )}
 
-          <div className="border-t border-white/10 px-3 py-3 space-y-3">
+          <div className="border-t border-line px-3 py-3 space-y-3">
             <div className="font-mono text-[10px] uppercase tracking-[0.14em] text-brand/80">
               Alert settings
             </div>
@@ -230,7 +230,7 @@ export default function NotificationsBell() {
               <select
                 value={leadDays}
                 onChange={(e) => changeLeadDays(Number(e.target.value))}
-                className="shrink-0 rounded-md border border-white/15 bg-white/5 px-2 py-1 text-xs outline-none focus:border-brand/60"
+                className="shrink-0 rounded-md border border-line bg-hover px-2 py-1 text-xs outline-none focus:border-brand/60"
                 aria-label="Reminder lead time"
               >
                 <option value={3} className="bg-ground">3 days</option>

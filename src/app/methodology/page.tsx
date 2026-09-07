@@ -5,7 +5,7 @@ import { HeroDecor } from "@/src/components/Decor";
 
 const eyebrow = "font-mono text-xs uppercase tracking-[0.16em] text-brand mb-3";
 const wrap = "max-w-3xl mx-auto px-4 sm:px-6 lg:px-8";
-const section = "py-14 border-t border-white/10";
+const section = "py-14 border-t border-line";
 const LAST_UPDATED = "July 2026";
 
 const LAYERS = [
@@ -51,7 +51,7 @@ const FREQUENCY = [
 
 export default function MethodologyPage() {
   return (
-    <div className="min-h-screen bg-ground text-white relative overflow-hidden">
+    <div className="min-h-screen bg-ground text-ink relative overflow-hidden">
       <Navigation />
       <HeroDecor variant="contours" />
 
@@ -70,7 +70,7 @@ export default function MethodologyPage() {
             the built environment and the natural one — and how it changes over time. We use
             public data, name every source, and would rather say &quot;unknown&quot; than guess.
           </p>
-          <p className="mt-4 opacity-70 leading-relaxed border-l-2 border-white/15 pl-4">
+          <p className="mt-4 opacity-70 leading-relaxed border-l-2 border-line pl-4">
             For anything urgent — health, evacuation, an emergency — follow your official alerts
             first. Arounded is for context and patterns, not split-second calls.
           </p>
@@ -79,7 +79,7 @@ export default function MethodologyPage() {
         {/* Sources at a glance — hairline columns */}
         <div className="mt-10 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-8 gap-y-7">
           {LAYERS.map((l) => (
-            <div key={l.t} className="border-t border-white/10 pt-4">
+            <div key={l.t} className="border-t border-line pt-4">
               <h3 className="font-semibold mb-1">{l.t}</h3>
               <div className="text-xs opacity-55 mb-1.5">{l.src}</div>
               <p className="text-sm opacity-75 leading-relaxed">{l.d}</p>
@@ -185,7 +185,7 @@ export default function MethodologyPage() {
           <h2 className="text-2xl sm:text-3xl font-bold tracking-tight mb-8">Nearby infrastructure</h2>
 
           <div className="space-y-8 max-w-2xl">
-            <div className="border-t border-white/10 pt-5">
+            <div className="border-t border-line pt-5">
               <h3 className="font-semibold mb-1">EPA facilities</h3>
               <div className="text-xs opacity-55 mb-2">
                 <SourceLink href="https://www.epa.gov/frs" label="EPA Facility Registry Service (FRS)" />
@@ -202,7 +202,7 @@ export default function MethodologyPage() {
               </p>
             </div>
 
-            <div className="border-t border-white/10 pt-5">
+            <div className="border-t border-line pt-5">
               <h3 className="font-semibold mb-1">Data centers</h3>
               <div className="text-xs opacity-55 mb-2">
                 <SourceLink href="https://www.fractracker.org/data-centers/" label="FracTracker Alliance U.S. Data Centers Tracker" />
@@ -221,7 +221,7 @@ export default function MethodologyPage() {
               </p>
             </div>
 
-            <div className="border-t border-white/10 pt-5">
+            <div className="border-t border-line pt-5">
               <h3 className="font-semibold mb-1">Power plants</h3>
               <div className="text-xs opacity-55 mb-2">
                 <SourceLink href="https://www.openstreetmap.org/" label="OpenStreetMap" /> (via the Overpass API)
@@ -236,7 +236,7 @@ export default function MethodologyPage() {
               </p>
             </div>
 
-            <div className="border-t border-white/10 pt-5">
+            <div className="border-t border-line pt-5">
               <h3 className="font-semibold mb-1">Air-quality stations</h3>
               <div className="text-xs opacity-55 mb-2">
                 <SourceLink href="https://openaq.org/" label="OpenAQ monitoring locations" />
@@ -266,7 +266,7 @@ export default function MethodologyPage() {
         <section className={section}>
           <div className={eyebrow}>Cadence</div>
           <h2 className="text-2xl sm:text-3xl font-bold tracking-tight mb-8">Update frequency</h2>
-          <dl className="divide-y divide-white/10 border-t border-white/10 max-w-2xl">
+          <dl className="divide-y divide-line border-t border-line max-w-2xl">
             {FREQUENCY.map((f) => (
               <div key={f.t} className="grid sm:grid-cols-[220px_1fr] gap-1 sm:gap-6 py-4">
                 <dt className="font-semibold text-sm">{f.t}</dt>
@@ -341,7 +341,7 @@ export default function MethodologyPage() {
           <p className="opacity-80 leading-relaxed max-w-2xl text-[15px] mb-6">
             Arounded is built on public and openly-licensed data. We credit each source and respect its license.
           </p>
-          <ul className="divide-y divide-white/10 border-t border-white/10 max-w-2xl text-sm">
+          <ul className="divide-y divide-line border-t border-line max-w-2xl text-sm">
             <li className="py-4 opacity-80 leading-relaxed">
               <SourceLink href="https://www.openstreetmap.org/copyright" label="OpenStreetMap" /> contributors — power plants and related features.
               Data is © OpenStreetMap contributors, available under the{" "}
@@ -366,7 +366,7 @@ export default function MethodologyPage() {
         </section>
 
         {/* Back to map */}
-        <div className="pt-10 border-t border-white/10">
+        <div className="pt-10 border-t border-line">
           <Link
             href="/map"
             className="inline-block px-6 py-3 bg-brand text-brand-ink rounded-lg font-medium hover:bg-brand-strong transition-colors"

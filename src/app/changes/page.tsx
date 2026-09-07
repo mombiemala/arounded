@@ -54,7 +54,7 @@ export default async function ChangesPage() {
   }
 
   return (
-    <div className="min-h-screen bg-ground text-white relative overflow-hidden">
+    <div className="min-h-screen bg-ground text-ink relative overflow-hidden">
       <Navigation />
       <HeroDecor variant="contours" />
 
@@ -70,7 +70,7 @@ export default async function ChangesPage() {
         </p>
 
         {byDate.length === 0 ? (
-          <p className="border-l-2 border-white/15 pl-4 text-sm opacity-70 leading-relaxed">
+          <p className="border-l-2 border-line pl-4 text-sm opacity-70 leading-relaxed">
             Nothing logged yet. As the map refreshes, new and changed sites will show up here.
           </p>
         ) : (
@@ -80,7 +80,7 @@ export default async function ChangesPage() {
                 <h2 className="font-mono text-xs uppercase tracking-[0.14em] opacity-50 mb-4">
                   {humanizeDate(group.date)}
                 </h2>
-                <ul className="divide-y divide-white/10 border-t border-white/10">
+                <ul className="divide-y divide-line border-t border-line">
                   {group.items.map((item) => {
                     const meta = CHANGE_META[item.change_type] ?? {
                       verb: item.change_type,

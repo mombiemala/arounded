@@ -3,6 +3,7 @@
 import { Suspense, useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Navigation from "@/src/components/Navigation";
+import Footer from "@/src/components/Footer";
 import { HeroDecor } from "@/src/components/Decor";
 import { supabase } from "@/lib/supabaseClient";
 import {
@@ -91,7 +92,7 @@ function SearchSlot({
 
   if (place) {
     return (
-      <div className="flex items-center justify-between gap-2 rounded-lg border border-white/15 bg-white/5 px-3 py-2">
+      <div className="flex items-center justify-between gap-2 rounded-lg border border-line bg-hover px-3 py-2">
         <div className="text-sm truncate">{place.place_name}</div>
         <button
           onClick={() => {
@@ -119,11 +120,11 @@ function SearchSlot({
         }}
         placeholder={`${label} — address, city, ZIP`}
         aria-label={`${label} location`}
-        className="w-full rounded-lg border border-white/15 bg-white/5 px-3 py-2 text-sm outline-none placeholder:text-white/40 focus:border-white/40 transition-colors"
+        className="w-full rounded-lg border border-line bg-hover px-3 py-2 text-sm outline-none placeholder:text-ink-faint focus:border-line transition-colors"
       />
       {searching && <div className="text-xs opacity-60 px-1">Searching…</div>}
       {results.length > 0 && (
-        <div className="rounded-lg border border-white/10 overflow-hidden bg-white/5">
+        <div className="rounded-lg border border-line overflow-hidden bg-hover">
           {results.map((r) => (
             <button
               key={r.id}
@@ -132,7 +133,7 @@ function SearchSlot({
                 setQuery("");
                 setResults([]);
               }}
-              className="w-full text-left px-3 py-2 text-sm hover:bg-white/10 border-b border-white/5 last:border-b-0 transition-colors"
+              className="w-full text-left px-3 py-2 text-sm hover:bg-surface-2 border-b border-line last:border-b-0 transition-colors"
             >
               {r.place_name}
             </button>
@@ -153,7 +154,7 @@ function Metric({
   b: React.ReactNode;
 }) {
   return (
-    <div className="grid grid-cols-[1fr_auto_1fr] gap-3 items-center py-3 border-b border-white/10 last:border-b-0">
+    <div className="grid grid-cols-[1fr_auto_1fr] gap-3 items-center py-3 border-b border-line last:border-b-0">
       <div className="text-sm text-right">{a}</div>
       <div className="text-[11px] uppercase tracking-wide opacity-50 text-center px-2 min-w-[84px]">
         {label}
@@ -230,7 +231,7 @@ function CompareInner() {
     v == null ? <span className="opacity-50">—</span> : `${Math.round(v)}${suffix}`;
 
   return (
-    <div className="min-h-screen bg-ground text-white relative overflow-hidden">
+    <div className="min-h-screen bg-ground text-ink relative overflow-hidden">
       <Navigation />
       <HeroDecor variant="plots" />
       <section className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 relative py-16">
@@ -260,12 +261,12 @@ function CompareInner() {
         </div>
 
         {!bothChosen ? (
-          <p className="border-l-2 border-white/15 pl-4 text-sm opacity-70 leading-relaxed">
+          <p className="border-l-2 border-line pl-4 text-sm opacity-70 leading-relaxed">
             Choose two places above to compare them.
           </p>
         ) : (
-          <div className="rounded-2xl border border-white/10 p-6">
-            <div className="grid grid-cols-[1fr_auto_1fr] gap-3 items-end pb-3 mb-1 border-b border-white/10">
+          <div className="rounded-2xl border border-line p-6">
+            <div className="grid grid-cols-[1fr_auto_1fr] gap-3 items-end pb-3 mb-1 border-b border-line">
               <div className="text-right font-semibold truncate">{placeA?.place_name}</div>
               <div className="text-[11px] uppercase tracking-wide opacity-50 text-center min-w-[84px]">
                 vs
@@ -340,6 +341,7 @@ export default function ComparePage() {
   return (
     <Suspense fallback={<div className="min-h-screen bg-ground" />}>
       <CompareInner />
+      <Footer />
     </Suspense>
   );
 }

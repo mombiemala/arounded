@@ -98,12 +98,12 @@ export default function DecisionSubmitForm() {
     }
   };
 
-  const field = "w-full rounded-lg border border-white/15 bg-white/5 px-3 py-2.5 text-sm outline-none placeholder:text-white/40 focus:border-brand/60 transition-colors";
+  const field = "w-full rounded-lg border border-line bg-hover px-3 py-2.5 text-sm outline-none placeholder:text-ink-faint focus:border-brand/60 transition-colors";
   const labelCls = "block text-xs font-medium mb-1.5 opacity-80";
 
   if (!user) {
     return (
-      <div className="border-t border-white/10 pt-6">
+      <div className="border-t border-line pt-6">
         <p className="text-sm opacity-70 leading-relaxed">
           Know about a hearing or comment deadline near a data center?{" "}
           <Link href="/login" className="text-brand hover:text-brand-strong">Sign in</Link> to add it —
@@ -114,7 +114,7 @@ export default function DecisionSubmitForm() {
   }
 
   return (
-    <div className="border-t border-white/10 pt-6">
+    <div className="border-t border-line pt-6">
       {message && (
         <div
           className={[
@@ -131,7 +131,7 @@ export default function DecisionSubmitForm() {
       {!open ? (
         <button
           onClick={() => setOpen(true)}
-          className="px-5 py-2.5 rounded-lg border border-white/20 text-sm font-medium hover:border-brand/60 hover:text-brand transition-colors"
+          className="px-5 py-2.5 rounded-lg border border-line text-sm font-medium hover:border-brand/60 hover:text-brand transition-colors"
         >
           + Add a hearing or deadline
         </button>
@@ -162,7 +162,7 @@ export default function DecisionSubmitForm() {
             <div>
               <label htmlFor="ev-location" className={labelCls}>Location</label>
               {place ? (
-                <div className="flex items-center justify-between gap-2 rounded-lg border border-white/15 bg-white/5 px-3 py-2.5">
+                <div className="flex items-center justify-between gap-2 rounded-lg border border-line bg-hover px-3 py-2.5">
                   <span className="text-sm truncate">{place.place_name}</span>
                   <button type="button" onClick={() => { setPlace(null); setQuery(""); }} className="text-xs opacity-60 hover:opacity-100 shrink-0">Change</button>
                 </div>
@@ -177,13 +177,13 @@ export default function DecisionSubmitForm() {
                     autoComplete="off"
                   />
                   {results.length > 0 && (
-                    <div className="absolute z-10 mt-1 w-full rounded-lg border border-white/10 overflow-hidden bg-ground shadow-lg">
+                    <div className="absolute z-10 mt-1 w-full rounded-lg border border-line overflow-hidden bg-ground shadow-lg">
                       {results.slice(0, 5).map((r) => (
                         <button
                           key={r.id}
                           type="button"
                           onClick={() => { setPlace(r); setResults([]); }}
-                          className="w-full text-left px-3 py-2 text-sm hover:bg-white/10 border-b border-white/5 last:border-b-0"
+                          className="w-full text-left px-3 py-2 text-sm hover:bg-surface-2 border-b border-line last:border-b-0"
                         >
                           {r.place_name}
                         </button>
@@ -232,7 +232,7 @@ export default function DecisionSubmitForm() {
             <button
               type="button"
               onClick={() => { setOpen(false); setMessage(null); }}
-              className="px-5 py-2.5 rounded-lg border border-white/20 text-sm hover:border-white/40 transition-colors"
+              className="px-5 py-2.5 rounded-lg border border-line text-sm hover:border-line transition-colors"
             >
               Cancel
             </button>
