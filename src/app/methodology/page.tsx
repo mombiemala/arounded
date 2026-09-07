@@ -1,5 +1,6 @@
 import Link from "next/link";
 import Navigation from "@/src/components/Navigation";
+import Footer from "@/src/components/Footer";
 import SourceLink from "@/src/components/SourceLink";
 import { HeroDecor } from "@/src/components/Decor";
 
@@ -375,6 +376,7 @@ export default function MethodologyPage() {
           </Link>
         </div>
       </div>
+      <Footer />
     </div>
   );
 }

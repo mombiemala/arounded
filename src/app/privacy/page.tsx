@@ -1,5 +1,6 @@
 import Link from "next/link";
 import Navigation from "@/src/components/Navigation";
+import Footer from "@/src/components/Footer";
 import { HeroDecor } from "@/src/components/Decor";
 
 const eyebrow = "font-mono text-xs uppercase tracking-[0.16em] text-brand mb-3";
@@ -221,6 +222,7 @@ export default function PrivacyPage() {
           </Link>
         </div>
       </div>
+      <Footer />
     </div>
   );
 }
