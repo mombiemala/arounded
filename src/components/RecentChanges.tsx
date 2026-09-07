@@ -40,7 +40,7 @@ export default function RecentChanges() {
   if (!rows || rows.length === 0) return null;
 
   return (
-    <div className="rounded-lg border border-white/10 bg-white/5 p-3 text-sm space-y-2">
+    <div className="rounded-lg border border-line bg-hover p-3 text-sm space-y-2">
       <div className="flex items-center justify-between">
         <div className="font-medium">Recent changes</div>
         <Link href="/changes" className="text-xs underline opacity-80 hover:opacity-100">

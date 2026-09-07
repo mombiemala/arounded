@@ -50,7 +50,7 @@ export default function NearbyDecisions({ lat, lng }: { lat: number; lng: number
   if (!events || events.length === 0) return null;
 
   return (
-    <div className="pt-4 border-t border-white/10">
+    <div className="pt-4 border-t border-line">
       <div className="flex items-center justify-between mb-2">
         <div className="font-mono text-[10px] uppercase tracking-[0.14em] text-brand/80">
           Upcoming decisions nearby
@@ -59,7 +59,7 @@ export default function NearbyDecisions({ lat, lng }: { lat: number; lng: number
           All →
         </Link>
       </div>
-      <ul className="divide-y divide-white/10 border-t border-white/10">
+      <ul className="divide-y divide-line border-t border-line">
         {events.map((e) => {
           const target = eventTarget(e);
           const soon = (daysUntil(target) ?? 99) <= 7;

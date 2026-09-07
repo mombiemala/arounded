@@ -1336,7 +1336,7 @@ export default function MapView() {
   return (
     <div className="w-full lg:min-h-[calc(100vh-64px)] flex flex-col lg:flex-row">
       {/* Left panel (below the map on mobile, beside it on desktop) */}
-      <div className="w-full lg:max-w-md border-b lg:border-b-0 lg:border-r border-white/10 p-4 sm:p-5 space-y-5 lg:overflow-y-auto lg:max-h-[calc(100vh-64px)] order-1 lg:order-1">
+      <div className="w-full lg:max-w-md border-b lg:border-b-0 lg:border-r border-line p-4 sm:p-5 space-y-5 lg:overflow-y-auto lg:max-h-[calc(100vh-64px)] order-1 lg:order-1">
         <div className="space-y-2">
           <div className="font-mono text-[10px] uppercase tracking-[0.14em] text-brand/80">
             Find a place
@@ -1352,19 +1352,19 @@ export default function MapView() {
             }}
             placeholder="Address, city, ZIP"
             aria-label="Search for a place"
-            className="w-full rounded-lg border border-white/15 bg-white/5 px-3 py-2 outline-none placeholder:text-white/40 focus:border-white/40 transition-colors"
+            className="w-full rounded-lg border border-line bg-hover px-3 py-2 outline-none placeholder:text-ink-faint focus:border-ink-faint transition-colors"
           />
           <div className="text-xs opacity-70">
             {isSearching ? "Searching…" : searchError ? searchError : " "}
           </div>
 
           {results.length > 0 && (
-            <div className="rounded-lg border border-white/10 overflow-hidden bg-white/5">
+            <div className="rounded-lg border border-line overflow-hidden bg-hover">
               {results.map((r) => (
                 <button
                   key={r.id}
                   onClick={() => selectResult(r)}
-                  className="w-full text-left px-3 py-2 hover:bg-white/10 border-b border-white/5 last:border-b-0 transition-colors"
+                  className="w-full text-left px-3 py-2 hover:bg-surface-2 border-b border-line-soft last:border-b-0 transition-colors"
                 >
                   <div className="text-sm">{r.place_name}</div>
                 </button>
@@ -1383,7 +1383,7 @@ export default function MapView() {
             )}
         </div>
 
-        <div className="space-y-2 pt-4 border-t border-white/10">
+        <div className="space-y-2 pt-4 border-t border-line">
           <div className="font-mono text-[10px] uppercase tracking-[0.14em] text-brand/80">
             Within radius
           </div>
@@ -1395,7 +1395,7 @@ export default function MapView() {
                 className={`px-3 py-1.5 rounded-full border text-sm transition-colors ${
                   radiusMiles === m
                     ? "border-brand/50 bg-brand/15 text-brand"
-                    : "border-white/15 hover:border-white/30"
+                    : "border-line hover:border-ink-faint"
                 }`}
               >
                 {m} mi
@@ -1404,7 +1404,7 @@ export default function MapView() {
           </div>
         </div>
 
-        <div className="space-y-1 pt-4 border-t border-white/10">
+        <div className="space-y-1 pt-4 border-t border-line">
           <div className="font-mono text-[10px] uppercase tracking-[0.14em] text-brand/80 mb-1">
             Show on the map
           </div>
@@ -1430,8 +1430,8 @@ export default function MapView() {
                     onChange={(e) => layer.set(e.target.checked)}
                     aria-label={`Toggle ${layer.label}`}
                   />
-                  <span className="block w-9 h-5 rounded-full bg-white/15 peer-checked:bg-brand transition-colors peer-focus-visible:ring-2 peer-focus-visible:ring-brand peer-focus-visible:ring-offset-2 peer-focus-visible:ring-offset-ground" />
-                  <span className="pointer-events-none absolute left-[3px] top-1/2 -translate-y-1/2 translate-x-0 peer-checked:translate-x-4 w-3.5 h-3.5 rounded-full bg-white shadow-sm transition-transform" />
+                  <span className="block w-9 h-5 rounded-full bg-surface-2 peer-checked:bg-brand transition-colors peer-focus-visible:ring-2 peer-focus-visible:ring-brand peer-focus-visible:ring-offset-2 peer-focus-visible:ring-offset-ground" />
+                  <span className="pointer-events-none absolute left-[3px] top-1/2 -translate-y-1/2 translate-x-0 peer-checked:translate-x-4 w-3.5 h-3.5 rounded-full bg-ink shadow-sm transition-transform" />
                 </span>
               </label>
 
@@ -1472,12 +1472,12 @@ export default function MapView() {
           </div>
         </div>
 
-        <div className="space-y-2 pt-4 border-t border-white/10">
+        <div className="space-y-2 pt-4 border-t border-line">
           <div className="font-mono text-[10px] uppercase tracking-[0.14em] text-brand/80">
             Air &amp; weather
           </div>
 
-          <div className="rounded-lg border border-white/10 bg-white/5 p-3 text-sm space-y-2">
+          <div className="rounded-lg border border-line bg-hover p-3 text-sm space-y-2">
             {conditionsLoading && <div className="opacity-70">Loading conditions…</div>}
 
             {conditionsError && <div className="text-xs text-red-400">{conditionsError}</div>}
@@ -1506,7 +1506,7 @@ export default function MapView() {
                   <div>{weather?.windMph != null ? `${Math.round(weather.windMph)} mph` : "—"}</div>
                 </div>
 
-                <div className="border-t border-white/10 pt-2 flex items-center justify-between">
+                <div className="border-t border-line pt-2 flex items-center justify-between">
                   <div className="opacity-80">Air</div>
                   <div className="text-right">
                     {air?.usAqi != null ? (
@@ -1529,7 +1529,7 @@ export default function MapView() {
                 </div>
 
                 {showSmoke && (
-                  <div className="border-t border-white/10 pt-2 flex items-center justify-between">
+                  <div className="border-t border-line pt-2 flex items-center justify-between">
                     <div className="opacity-80">Smoke</div>
                     <div>{smokeSignal(air).label}</div>
                   </div>
@@ -1550,7 +1550,7 @@ export default function MapView() {
           </div>
         </div>
 
-        <div className="pt-4 border-t border-white/10 text-sm space-y-1">
+        <div className="pt-4 border-t border-line text-sm space-y-1">
           <div className="flex items-center justify-between mb-2">
             <div className="font-mono text-[10px] uppercase tracking-[0.14em] text-brand/80">This place</div>
             <button
@@ -1563,7 +1563,7 @@ export default function MapView() {
                   console.error("Failed to copy:", err);
                 }
               }}
-              className="text-xs px-2 py-1 border border-white/20 rounded hover:border-brand/50 hover:text-brand transition-colors"
+              className="text-xs px-2 py-1 border border-line rounded hover:border-brand/50 hover:text-brand transition-colors"
             >
               Share
             </button>
@@ -1583,8 +1583,8 @@ export default function MapView() {
                     onClick={() => setSaveLabel(p)}
                     className={`px-2 py-1 rounded-full border text-xs transition-colors ${
                       saveLabel === p
-                        ? "border-white/40 bg-white/10"
-                        : "border-white/15 hover:border-white/30"
+                        ? "border-ink-faint bg-surface-2"
+                        : "border-line hover:border-ink-faint"
                     }`}
                   >
                     {p}
@@ -1596,12 +1596,12 @@ export default function MapView() {
                 onChange={(e) => setSaveLabel(e.target.value)}
                 placeholder="Label (e.g. Home)"
                 aria-label="Place label"
-                className="w-full rounded-lg border border-white/15 bg-white/5 px-3 py-2 text-xs outline-none placeholder:text-white/40 focus:border-white/40 transition-colors"
+                className="w-full rounded-lg border border-line bg-hover px-3 py-2 text-xs outline-none placeholder:text-ink-faint focus:border-ink-faint transition-colors"
               />
               <button
                 onClick={handleSaveLocation}
                 disabled={savingLocation}
-                className="w-full px-3 py-2 text-xs border border-white/20 rounded-lg hover:border-white/40 transition-colors disabled:opacity-50"
+                className="w-full px-3 py-2 text-xs border border-line rounded-lg hover:border-ink-faint transition-colors disabled:opacity-50"
               >
                 {savingLocation
                   ? "Saving..."
@@ -1612,7 +1612,7 @@ export default function MapView() {
           {selectedPlace && !user && (
             <button
               onClick={handleSaveLocation}
-              className="mt-3 w-full px-3 py-2 text-xs border border-white/20 rounded-lg hover:border-brand/50 hover:text-brand transition-colors"
+              className="mt-3 w-full px-3 py-2 text-xs border border-line rounded-lg hover:border-brand/50 hover:text-brand transition-colors"
             >
               Save this place
             </button>
@@ -1622,7 +1622,7 @@ export default function MapView() {
         <NearbyDecisions lat={center[1]} lng={center[0]} />
 
         {showLoginPrompt && (
-          <div className="rounded-lg border border-white/20 bg-white/10 p-4 space-y-3">
+          <div className="rounded-lg border border-line bg-surface-2 p-4 space-y-3">
             <div className="font-medium text-sm">Sign in to save places</div>
             <p className="text-xs opacity-80">
               Create a free account to save places, see their history, and get alerts when
@@ -1637,7 +1637,7 @@ export default function MapView() {
               </Link>
               <button
                 onClick={() => setShowLoginPrompt(false)}
-                className="px-4 py-2 border border-white/20 rounded-lg hover:border-white/40 transition-colors text-sm"
+                className="px-4 py-2 border border-line rounded-lg hover:border-ink-faint transition-colors text-sm"
               >
                 Cancel
               </button>
@@ -1646,7 +1646,7 @@ export default function MapView() {
         )}
 
         {user && savedPlaces.length > 0 && (
-          <div className="pt-4 border-t border-white/10 text-sm space-y-2">
+          <div className="pt-4 border-t border-line text-sm space-y-2">
             <div className="font-mono text-[10px] uppercase tracking-[0.14em] text-brand/80">My places</div>
             <div className="space-y-1">
               {savedPlaces.map((p) => (
@@ -1654,8 +1654,8 @@ export default function MapView() {
                   key={p.id}
                   className={`flex items-center justify-between rounded-lg border px-2 py-1.5 transition-colors ${
                     selectedPlaceId === p.id
-                      ? "border-white/40 bg-white/10"
-                      : "border-white/10 hover:border-white/25"
+                      ? "border-ink-faint bg-surface-2"
+                      : "border-line hover:border-line"
                   }`}
                 >
                   <button
@@ -1681,7 +1681,7 @@ export default function MapView() {
         )}
 
         {user && selectedPlaceId && historyStats && (
-          <div className="rounded-lg border border-white/10 bg-white/5 p-3 text-sm space-y-2">
+          <div className="rounded-lg border border-line bg-hover p-3 text-sm space-y-2">
             <div className="flex items-center justify-between">
               <div className="font-medium">
                 {savedPlaces.find((p) => p.id === selectedPlaceId)?.label ?? "Place"} history
@@ -1726,7 +1726,7 @@ export default function MapView() {
                 { k: "Smoke 30d", v: historyStats.smoke30 },
                 { k: "Smoke 90d", v: historyStats.smoke90 },
               ].map((s) => (
-                <div key={s.k} className="rounded-lg bg-white/5 py-2">
+                <div key={s.k} className="rounded-lg bg-hover py-2">
                   <div className="text-base font-semibold">{s.v}</div>
                   <div className="text-[10px] uppercase tracking-wide opacity-50">{s.k}</div>
                 </div>
@@ -1749,7 +1749,7 @@ export default function MapView() {
             )}
 
             {history && history.length > 0 && (
-              <div className="pt-2 border-t border-white/10 space-y-1">
+              <div className="pt-2 border-t border-line space-y-1">
                 <div className="text-xs opacity-60">Last 10 days</div>
                 {history.slice(0, 10).map((r) => (
                   <div key={r.date} className="flex justify-between text-xs">
@@ -1767,7 +1767,7 @@ export default function MapView() {
         )}
 
         {!user && (
-          <div className="rounded-lg border border-white/10 bg-white/5 p-3 text-sm">
+          <div className="rounded-lg border border-line bg-hover p-3 text-sm">
             <div className="font-medium mb-2">Saved places</div>
             <p className="text-xs opacity-70 mb-3">
               Sign in to save your places, track their history, and get alerts when a data
