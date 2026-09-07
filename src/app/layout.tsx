@@ -1,15 +1,27 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Bricolage_Grotesque, Public_Sans, Spline_Sans_Mono } from "next/font/google";
 import "./globals.css";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+// Warm, neighborly, cartographic identity:
+//   display — Bricolage Grotesque (characterful, humanist)
+//   body/UI — Public Sans (the US civic typeface — plain, trustworthy)
+//   data    — Spline Sans Mono (dates, application codes, coordinates)
+const display = Bricolage_Grotesque({
+  variable: "--ff-display",
   subsets: ["latin"],
+  display: "swap",
 });
 
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
+const body = Public_Sans({
+  variable: "--ff-body",
   subsets: ["latin"],
+  display: "swap",
+});
+
+const mono = Spline_Sans_Mono({
+  variable: "--ff-mono",
+  subsets: ["latin"],
+  display: "swap",
 });
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://arounded.kamalacreated.com";
@@ -43,12 +55,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className="dark">
-      <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
-      >
-        {children}
-      </body>
+    <html lang="en" className={`dark ${display.variable} ${body.variable} ${mono.variable}`}>
+      <body className="antialiased">{children}</body>
     </html>
   );
 }

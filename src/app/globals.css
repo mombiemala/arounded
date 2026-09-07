@@ -1,25 +1,33 @@
 @import "mapbox-gl/dist/mapbox-gl.css";
 @import "tailwindcss";
 
-/* Brand tokens — a warm, earthy "civic-nature" identity.
-   A deep warm-soil ground (not stark black), a moss/leaf-green accent for
-   chrome (buttons, links, focus, active nav), and two secondary naturals —
-   a warm ochre (sun) and a terracotta (clay) — for gentle warmth. Kept off
-   the map's functional data-dot palette. */
+/* ─────────────────────────────────────────────────────────────
+   Arounded brand tokens — a warm, neighborly, cartographic identity.
+   One bold civic green is the accent; warm naturals (clay / honey / sky)
+   are reserved for map DATA (proposed vs. operating vs. air), not chrome.
+   Values below are the dark-mode palette (the app currently renders dark);
+   a light palette follows once pages are migrated off hardcoded white.
+   ───────────────────────────────────────────────────────────── */
 @theme {
-  --color-ground: #14140e;
-  --color-ground-soft: #1c1b13;
-  --color-brand: #86ac6a;
-  --color-brand-strong: #6f9553;
-  --color-brand-ink: #12170d;
-  --color-sun: #e0a95c;
-  --color-clay: #c67c52;
-  --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
-  --font-mono: var(--font-geist-mono), ui-monospace, monospace;
+  --color-ground: #15130e;        /* warm near-black ground */
+  --color-ground-soft: #1f1c15;   /* raised surface */
+  --color-surface: #1f1c15;
+  --color-brand: #63bc7c;         /* civic green — the one accent */
+  --color-brand-strong: #7ecb92;
+  --color-brand-ink: #0d2116;     /* text on green */
+  --color-clay: #db8a5c;          /* data: proposed / construction */
+  --color-honey: #e4b25c;         /* data: warm signal */
+  --color-sun: #e4b25c;           /* alias kept for existing usage */
+  --color-sky: #6baac0;           /* data: air / water */
+
+  --font-display: var(--ff-display), ui-sans-serif, system-ui, sans-serif;
+  --font-sans: var(--ff-body), ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-mono: var(--ff-mono), ui-monospace, "SFMono-Regular", monospace;
 }
 
 :root {
-  --radius: 0.5rem;
+  --radius: 0.65rem;
+  --ink: #f1eadd;         /* warm off-white body text */
 }
 
 html {
@@ -28,16 +36,22 @@ html {
 
 body {
   background: var(--color-ground);
-  color: #f1ede2;
-  font-family: var(--font-geist-sans), ui-sans-serif, system-ui, -apple-system,
-    "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  color: var(--ink);
+  font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
+}
+
+/* Headlines carry the display face app-wide. */
+h1, h2, h3 {
+  font-family: var(--font-display);
+  letter-spacing: -0.02em;
+  text-wrap: balance;
 }
 
 /* Visible, on-brand keyboard focus everywhere. */
 :where(a, button, input, [tabindex]):focus-visible {
   outline: 2px solid var(--color-brand);
   outline-offset: 2px;
-  border-radius: 4px;
+  border-radius: 6px;
 }
