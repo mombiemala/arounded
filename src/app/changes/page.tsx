@@ -1,4 +1,5 @@
 import Navigation from "@/src/components/Navigation";
+import Footer from "@/src/components/Footer";
 import { HeroDecor } from "@/src/components/Decor";
 import { supabase } from "@/lib/supabaseClient";
 
@@ -114,6 +115,7 @@ export default async function ChangesPage() {
           </div>
         )}
       </section>
+      <Footer />
     </div>
   );
 }
