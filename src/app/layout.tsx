@@ -1,24 +1,24 @@
 import type { Metadata } from "next";
-import { Bricolage_Grotesque, Public_Sans, Spline_Sans_Mono } from "next/font/google";
+import { Big_Shoulders, Archivo, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 
-// Warm, neighborly, cartographic identity:
-//   display — Bricolage Grotesque (characterful, humanist)
-//   body/UI — Public Sans (the US civic typeface — plain, trustworthy)
-//   data    — Spline Sans Mono (dates, application codes, coordinates)
-const display = Bricolage_Grotesque({
+// "Neighborhood Press" identity — a community poster / civic riso zine.
+//   display — Big Shoulders (built for civic data; bold, condensed)
+//   body/UI — Archivo (a workhorse grotesque with civic character)
+//   data    — JetBrains Mono (the stamped, mechanical voice)
+const display = Big_Shoulders({
   variable: "--ff-display",
   subsets: ["latin"],
   display: "swap",
 });
 
-const body = Public_Sans({
+const body = Archivo({
   variable: "--ff-body",
   subsets: ["latin"],
   display: "swap",
 });
 
-const mono = Spline_Sans_Mono({
+const mono = JetBrains_Mono({
   variable: "--ff-mono",
   subsets: ["latin"],
   display: "swap",

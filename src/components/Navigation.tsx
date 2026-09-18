@@ -79,7 +79,7 @@ export default function Navigation() {
         <div className="flex items-center justify-between h-16">
           <Link
             href="/"
-            className="font-display text-xl font-bold tracking-tight flex items-center gap-2.5"
+            className="font-display text-2xl font-extrabold uppercase tracking-wide flex items-center gap-2.5"
           >
             <svg width="24" height="24" viewBox="0 0 26 26" fill="none" aria-hidden="true" className="shrink-0">
               <circle cx="13" cy="13" r="11.5" stroke="var(--color-brand)" strokeWidth="1.4" opacity="0.4" />
