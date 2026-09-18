@@ -4,7 +4,7 @@ import Footer from "@/src/components/Footer";
 import SourceLink from "@/src/components/SourceLink";
 import { HeroDecor } from "@/src/components/Decor";
 
-const eyebrow = "font-mono text-xs uppercase tracking-[0.16em] text-brand mb-3";
+const eyebrow = "font-mono text-xs uppercase tracking-[0.16em] text-flame font-bold mb-3";
 const wrap = "max-w-3xl mx-auto px-4 sm:px-6 lg:px-8";
 const section = "py-16 border-t border-line";
 
@@ -76,7 +76,7 @@ export default function AboutPage() {
         <div className={`${wrap} relative py-16`}>
         {/* Header */}
         <div className={eyebrow}>About Arounded</div>
-        <h1 className="text-4xl sm:text-5xl font-bold tracking-tight mb-5">
+        <h1 className="text-5xl sm:text-6xl font-black uppercase tracking-tight leading-[0.9] mb-5">
           A clearer view of what&apos;s around you
         </h1>
         <p className="text-lg opacity-85 leading-relaxed max-w-2xl">
@@ -88,7 +88,7 @@ export default function AboutPage() {
         {/* Why it exists */}
         <section className={`${section} mt-6`}>
           <div className={eyebrow}>Why it exists</div>
-          <h2 className="text-2xl sm:text-3xl font-bold tracking-tight mb-6">
+          <h2 className="text-2xl sm:text-4xl font-black uppercase tracking-tight mb-6">
             Context beats a single number
           </h2>
           <div className="space-y-4 opacity-80 leading-relaxed max-w-2xl">
@@ -109,7 +109,7 @@ export default function AboutPage() {
         {/* What's on the map */}
         <section className={section}>
           <div className={eyebrow}>The layers</div>
-          <h2 className="text-2xl sm:text-3xl font-bold tracking-tight mb-8">What&apos;s on the map</h2>
+          <h2 className="text-2xl sm:text-4xl font-black uppercase tracking-tight mb-8">What&apos;s on the map</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-7">
             {LAYERS.map((l) => (
               <div key={l.t} className="border-t border-line pt-4">
@@ -124,7 +124,7 @@ export default function AboutPage() {
         {/* Principles */}
         <section className={section}>
           <div className={eyebrow}>What we stand for</div>
-          <h2 className="text-2xl sm:text-3xl font-bold tracking-tight mb-8">Our principles</h2>
+          <h2 className="text-2xl sm:text-4xl font-black uppercase tracking-tight mb-8">Our principles</h2>
           <div className="divide-y divide-line border-t border-line max-w-2xl">
             {PRINCIPLES.map((p) => (
               <div key={p.t} className="grid sm:grid-cols-[220px_1fr] gap-1 sm:gap-6 py-5">

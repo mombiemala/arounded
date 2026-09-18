@@ -235,10 +235,10 @@ function CompareInner() {
       <Navigation />
       <HeroDecor variant="plots" />
       <section className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 relative py-16">
-        <div className="font-mono text-xs uppercase tracking-[0.16em] text-brand mb-3">
+        <div className="font-mono text-xs uppercase tracking-[0.16em] text-flame font-bold mb-3">
           Side by side
         </div>
-        <h1 className="text-4xl sm:text-5xl font-bold tracking-tight mb-4">Compare two places</h1>
+        <h1 className="text-5xl sm:text-6xl font-black uppercase tracking-tight leading-[0.9] mb-4">Compare two places</h1>
         <p className="opacity-80 leading-relaxed mb-10 max-w-2xl">
           Weighing a move, or just curious how two areas stack up? Put them side by side —
           air quality, smoke, weather, and how many data centers sit within {COMPARE_RADIUS_MI}{" "}
@@ -265,7 +265,7 @@ function CompareInner() {
             Choose two places above to compare them.
           </p>
         ) : (
-          <div className="rounded-2xl border border-line p-6">
+          <div className="rounded-xl border-2 border-ink p-6">
             <div className="grid grid-cols-[1fr_auto_1fr] gap-3 items-end pb-3 mb-1 border-b border-line">
               <div className="text-right font-semibold truncate">{placeA?.place_name}</div>
               <div className="text-[11px] uppercase tracking-wide opacity-50 text-center min-w-[84px]">

@@ -165,10 +165,10 @@ function NearInner() {
     <div className="min-h-screen bg-ground text-ink">
       <Navigation />
       <section className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-        <div className="font-mono text-xs uppercase tracking-[0.16em] text-brand mb-3">
+        <div className="font-mono text-xs uppercase tracking-[0.16em] text-flame font-bold mb-3">
           What&apos;s around this address
         </div>
-        <h1 className="text-3xl sm:text-4xl font-bold tracking-tight mb-3">
+        <h1 className="text-4xl sm:text-5xl font-black uppercase tracking-tight leading-[0.9] mb-3">
           The facts around a place — not a risk score
         </h1>
         <p className="opacity-75 leading-relaxed mb-8 max-w-xl">
@@ -179,7 +179,7 @@ function NearInner() {
         {!place ? (
           <Search onSelect={select} />
         ) : (
-          <div className="rounded-2xl border border-line overflow-hidden">
+          <div className="rounded-xl border-2 border-ink overflow-hidden">
             {/* Card header */}
             <div className="p-6 border-b border-line flex items-start justify-between gap-4">
               <div className="min-w-0">

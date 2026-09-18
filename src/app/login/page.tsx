@@ -98,11 +98,11 @@ export default function LoginPage() {
           </div>
         </nav>
 
-        <div className="rounded-2xl border border-line p-8">
-          <div className="font-mono text-xs uppercase tracking-[0.16em] text-brand mb-3">
+        <div className="rounded-xl border-2 border-ink p-8">
+          <div className="font-mono text-xs uppercase tracking-[0.16em] text-flame font-bold mb-3">
             Your places
           </div>
-          <h1 className="text-3xl font-bold tracking-tight mb-2">Sign in</h1>
+          <h1 className="text-4xl font-black uppercase tracking-tight mb-2">Sign in</h1>
           <p className="text-sm opacity-70 mb-6 leading-relaxed">
             The map is free — no account needed. Sign in only to save your places, see their
             history, and get alerts when something new is proposed nearby.

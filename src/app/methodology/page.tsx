@@ -4,7 +4,7 @@ import Footer from "@/src/components/Footer";
 import SourceLink from "@/src/components/SourceLink";
 import { HeroDecor } from "@/src/components/Decor";
 
-const eyebrow = "font-mono text-xs uppercase tracking-[0.16em] text-brand mb-3";
+const eyebrow = "font-mono text-xs uppercase tracking-[0.16em] text-flame font-bold mb-3";
 const wrap = "max-w-3xl mx-auto px-4 sm:px-6 lg:px-8";
 const section = "py-14 border-t border-line";
 const LAST_UPDATED = "July 2026";
@@ -59,7 +59,7 @@ export default function MethodologyPage() {
       <div className={`${wrap} relative py-16`}>
         {/* Header */}
         <div className={eyebrow}>Methodology</div>
-        <h1 className="text-4xl sm:text-5xl font-bold tracking-tight mb-3">
+        <h1 className="text-5xl sm:text-6xl font-black uppercase tracking-tight leading-[0.9] mb-3">
           How the map is built
         </h1>
         <p className="text-sm opacity-55">Last updated: {LAST_UPDATED}</p>
@@ -91,7 +91,7 @@ export default function MethodologyPage() {
         {/* What Arounded shows */}
         <section className={`${section} mt-4`}>
           <div className={eyebrow}>The idea</div>
-          <h2 className="text-2xl sm:text-3xl font-bold tracking-tight mb-5">What Arounded shows</h2>
+          <h2 className="text-2xl sm:text-4xl font-black uppercase tracking-tight mb-5">What Arounded shows</h2>
           <div className="space-y-4 opacity-80 leading-relaxed max-w-2xl">
             <p>
               Arounded helps you understand what&apos;s happening around a location — and what&apos;s been
@@ -111,7 +111,7 @@ export default function MethodologyPage() {
           <div className={eyebrow}>
             <SourceLink href="https://www.ospo.noaa.gov/Products/land/hms.html" label="NOAA HMS" />
           </div>
-          <h2 className="text-2xl sm:text-3xl font-bold tracking-tight mb-5">Smoke</h2>
+          <h2 className="text-2xl sm:text-4xl font-black uppercase tracking-tight mb-5">Smoke</h2>
           <div className="space-y-4 opacity-80 leading-relaxed max-w-2xl text-[15px]">
             <p>
               Smoke plume data comes from <SourceLink href="https://www.ospo.noaa.gov/Products/land/hms.html" label="NOAA's" /> daily satellite analysis. It&apos;s published as
@@ -143,7 +143,7 @@ export default function MethodologyPage() {
           <div className={eyebrow}>
             <SourceLink href="https://open-meteo.com/en/docs/air-quality-api" label="Open-Meteo Air Quality" />
           </div>
-          <h2 className="text-2xl sm:text-3xl font-bold tracking-tight mb-5">Air quality</h2>
+          <h2 className="text-2xl sm:text-4xl font-black uppercase tracking-tight mb-5">Air quality</h2>
           <div className="space-y-4 opacity-80 leading-relaxed max-w-2xl text-[15px]">
             <p>
               Arounded shows PM2.5 and US AQI values for a location. PM2.5 refers to fine
@@ -166,7 +166,7 @@ export default function MethodologyPage() {
           <div className={eyebrow}>
             <SourceLink href="https://open-meteo.com/en/docs" label="Open-Meteo Weather" />
           </div>
-          <h2 className="text-2xl sm:text-3xl font-bold tracking-tight mb-5">Weather</h2>
+          <h2 className="text-2xl sm:text-4xl font-black uppercase tracking-tight mb-5">Weather</h2>
           <div className="space-y-4 opacity-80 leading-relaxed max-w-2xl text-[15px]">
             <p>
               Weather includes temperature and daily highs/lows (and may include wind/humidity
@@ -183,7 +183,7 @@ export default function MethodologyPage() {
         {/* Nearby infrastructure */}
         <section className={section}>
           <div className={eyebrow}>On demand &amp; weekly</div>
-          <h2 className="text-2xl sm:text-3xl font-bold tracking-tight mb-8">Nearby infrastructure</h2>
+          <h2 className="text-2xl sm:text-4xl font-black uppercase tracking-tight mb-8">Nearby infrastructure</h2>
 
           <div className="space-y-8 max-w-2xl">
             <div className="border-t border-line pt-5">
@@ -254,7 +254,7 @@ export default function MethodologyPage() {
         {/* Change tracking */}
         <section className={section}>
           <div className={eyebrow}>Over time</div>
-          <h2 className="text-2xl sm:text-3xl font-bold tracking-tight mb-5">Change tracking</h2>
+          <h2 className="text-2xl sm:text-4xl font-black uppercase tracking-tight mb-5">Change tracking</h2>
           <p className="opacity-80 leading-relaxed max-w-2xl text-[15px]">
             As datasets refresh, Arounded records when facilities appear or disappear so you can
             see how an area is changing, not just its current state. Those events are summarized
@@ -266,7 +266,7 @@ export default function MethodologyPage() {
         {/* Update frequency — divided list */}
         <section className={section}>
           <div className={eyebrow}>Cadence</div>
-          <h2 className="text-2xl sm:text-3xl font-bold tracking-tight mb-8">Update frequency</h2>
+          <h2 className="text-2xl sm:text-4xl font-black uppercase tracking-tight mb-8">Update frequency</h2>
           <dl className="divide-y divide-line border-t border-line max-w-2xl">
             {FREQUENCY.map((f) => (
               <div key={f.t} className="grid sm:grid-cols-[220px_1fr] gap-1 sm:gap-6 py-4">
@@ -280,7 +280,7 @@ export default function MethodologyPage() {
         {/* Using it well */}
         <section className={section}>
           <div className={eyebrow}>Guidance</div>
-          <h2 className="text-2xl sm:text-3xl font-bold tracking-tight mb-5">Using it well</h2>
+          <h2 className="text-2xl sm:text-4xl font-black uppercase tracking-tight mb-5">Using it well</h2>
           <div className="space-y-4 opacity-80 leading-relaxed max-w-2xl text-[15px]">
             <p>
               Arounded is at its best for context and patterns — not split-second decisions. If
@@ -298,7 +298,7 @@ export default function MethodologyPage() {
         {/* Limitations */}
         <section className={section}>
           <div className={eyebrow}>Honest caveats</div>
-          <h2 className="text-2xl sm:text-3xl font-bold tracking-tight mb-5">Limitations</h2>
+          <h2 className="text-2xl sm:text-4xl font-black uppercase tracking-tight mb-5">Limitations</h2>
           <div className="space-y-4 opacity-80 leading-relaxed max-w-2xl text-[15px]">
             <p>
               Environmental conditions can change quickly. Any map-based view is an approximation of a
@@ -323,7 +323,7 @@ export default function MethodologyPage() {
         {/* Not medical advice */}
         <section className={section}>
           <div className={eyebrow}>Important</div>
-          <h2 className="text-2xl sm:text-3xl font-bold tracking-tight mb-5">Not medical advice</h2>
+          <h2 className="text-2xl sm:text-4xl font-black uppercase tracking-tight mb-5">Not medical advice</h2>
           <div className="space-y-4 opacity-80 leading-relaxed max-w-2xl text-[15px]">
             <p>
               Arounded provides environmental information for educational purposes. It is not medical advice.
@@ -338,7 +338,7 @@ export default function MethodologyPage() {
         {/* Sources & attribution */}
         <section className={section}>
           <div className={eyebrow}>Credit where it&apos;s due</div>
-          <h2 className="text-2xl sm:text-3xl font-bold tracking-tight mb-5">Sources &amp; attribution</h2>
+          <h2 className="text-2xl sm:text-4xl font-black uppercase tracking-tight mb-5">Sources &amp; attribution</h2>
           <p className="opacity-80 leading-relaxed max-w-2xl text-[15px] mb-6">
             Arounded is built on public and openly-licensed data. We credit each source and respect its license.
           </p>
