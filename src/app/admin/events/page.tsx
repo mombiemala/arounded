@@ -68,8 +68,8 @@ export default function AdminEventsPage() {
     <div className="min-h-screen bg-ground text-ink">
       <Navigation />
       <section className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-        <div className="font-mono text-xs uppercase tracking-[0.16em] text-brand mb-3">Moderation</div>
-        <h1 className="text-4xl font-bold tracking-tight mb-4">Review submissions</h1>
+        <div className="font-mono text-xs uppercase tracking-[0.16em] text-flame font-bold mb-3">Moderation</div>
+        <h1 className="text-5xl font-black uppercase tracking-tight leading-[0.9] mb-4">Review submissions</h1>
         <p className="opacity-70 leading-relaxed max-w-2xl mb-10">
           Community-submitted hearings appear live, badged &quot;unconfirmed.&quot; Auto-ingested candidates from
           county calendars stay hidden until you confirm them. Verify against the jurisdiction, then confirm —

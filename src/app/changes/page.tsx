@@ -60,10 +60,10 @@ export default async function ChangesPage() {
       <HeroDecor variant="contours" />
 
       <section className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 relative py-16">
-        <div className="font-mono text-xs uppercase tracking-[0.16em] text-brand mb-3">
+        <div className="font-mono text-xs uppercase tracking-[0.16em] text-flame font-bold mb-3">
           Change log
         </div>
-        <h1 className="text-4xl sm:text-5xl font-bold tracking-tight mb-4">What&apos;s changed</h1>
+        <h1 className="text-5xl sm:text-6xl font-black uppercase tracking-tight leading-[0.9] mb-4">What&apos;s changed</h1>
         <p className="opacity-80 leading-relaxed max-w-2xl mb-12">
           A plain-language log of what&apos;s moved on the map — when data centers and facilities
           appear, get approved, or disappear. It&apos;s how you catch what&apos;s changing near you
