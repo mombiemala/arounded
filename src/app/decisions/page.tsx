@@ -77,7 +77,7 @@ export default async function DecisionsPage() {
           Public hearings, board votes, and comment deadlines on data-center projects — so you
           hear about them while you can still weigh in, not after approvals are in place.{" "}
           <Link href="/login" className="text-brand hover:text-brand-strong">Save a place</Link>{" "}
-          and we&apos;ll email you when one comes up nearby.
+          and we&apos;ll flag it for you when one comes up nearby.
         </p>
 
         {featured && (() => {
