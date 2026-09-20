@@ -16,8 +16,13 @@ import {
 export const dynamic = "force-dynamic";
 
 type Row = Omit<CivicEvent, "jurisdiction"> & {
+  source_id: string | null;
   jurisdiction: { name: string | null; state: string | null; timezone: string | null } | null;
 };
+
+// The decision we want front-and-center right now. Falls back to the soonest
+// confirmed event if this specific source_id isn't present.
+const FEATURED_SOURCE_ID = "loudoun-dc-moratorium-final-2026-10-20";
 
 function sourceBadge(e: Row): { label: string; cls: string } {
   if (e.source === "sample") return { label: "Example", cls: "text-ink-faint border-line" };
@@ -29,7 +34,7 @@ export default async function DecisionsPage() {
   const { data } = await supabase
     .from("civic_events")
     .select(
-      "id,title,event_type,status,confirmed,starts_at,comment_deadline,lat,lng,description,how_to_comment_url,source,source_url,data_center_id,jurisdiction:jurisdictions(name,state,timezone)"
+      "id,title,event_type,status,confirmed,starts_at,comment_deadline,lat,lng,description,how_to_comment_url,source,source_url,source_id,data_center_id,jurisdiction:jurisdictions(name,state,timezone)"
     )
     .in("status", ["scheduled", "postponed", "decided"])
     .limit(300);
@@ -47,6 +52,14 @@ export default async function DecisionsPage() {
       if (!tb) return -1;
       return new Date(ta).getTime() - new Date(tb).getTime();
     });
+
+  // Pick the event to feature: the moratorium final vote if present, otherwise
+  // the soonest confirmed decision (rows are already sorted soonest-first).
+  const featured =
+    rows.find((e) => e.source_id === FEATURED_SOURCE_ID) ??
+    rows.find((e) => e.confirmed) ??
+    null;
+  const listRows = featured ? rows.filter((e) => e.id !== featured.id) : rows;
 
   return (
     <div className="min-h-screen bg-ground text-ink relative overflow-hidden">
@@ -67,13 +80,78 @@ export default async function DecisionsPage() {
           and we&apos;ll email you when one comes up nearby.
         </p>
 
-        {rows.length === 0 ? (
+        {featured && (() => {
+          const target = eventTarget(featured);
+          const jz = featured.jurisdiction;
+          const place = jz ? [jz.name, jz.state].filter(Boolean).join(", ") : null;
+          const countdown = countdownLabel(target);
+          return (
+            <div className="mb-12 rounded-xl border-2 border-ink overflow-hidden">
+              <div className="bg-ink text-ground px-5 sm:px-7 py-2.5 flex items-center justify-between gap-3">
+                <span className="font-mono text-[11px] uppercase tracking-[0.14em] font-bold text-flame">
+                  ★ Next big vote
+                </span>
+                {countdown && (
+                  <span className="font-mono text-[11px] uppercase tracking-[0.14em] font-bold">
+                    {countdown}
+                  </span>
+                )}
+              </div>
+              <div className="p-5 sm:p-7">
+                <div className="font-mono text-sm font-bold tabular-nums text-flame mb-2">
+                  {formatEventDate(target, jz?.timezone)}
+                  {place && <span className="text-ink opacity-55"> · {place}</span>}
+                </div>
+                <h2 className="text-2xl sm:text-4xl font-black uppercase tracking-tight leading-[0.95] mb-3">
+                  {featured.title}
+                </h2>
+                {featured.description && (
+                  <p className="opacity-75 leading-relaxed max-w-2xl mb-4">{featured.description}</p>
+                )}
+                <div className="flex flex-wrap gap-x-4 gap-y-2 text-sm">
+                  {featured.how_to_comment_url && (
+                    <a
+                      href={featured.how_to_comment_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="px-4 py-2 bg-brand text-brand-ink rounded-lg font-medium hover:bg-brand-strong transition-colors"
+                    >
+                      How to comment →
+                    </a>
+                  )}
+                  {(featured.starts_at || featured.comment_deadline) && (
+                    <a
+                      href={`/api/civic-events/${featured.id}/ics`}
+                      className="px-4 py-2 border-2 border-ink rounded-lg font-medium hover:bg-hover transition-colors"
+                    >
+                      Add to calendar
+                    </a>
+                  )}
+                  {featured.source_url && (
+                    <a
+                      href={featured.source_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="self-center opacity-60 hover:opacity-100"
+                    >
+                      Source
+                    </a>
+                  )}
+                </div>
+              </div>
+            </div>
+          );
+        })()}
+
+        {listRows.length === 0 ? (
           <p className="border-l-2 border-line pl-4 text-sm opacity-70 leading-relaxed">
-            No upcoming decisions logged yet. Know about one? Add it below.
+            {featured
+              ? "That's the only decision on the calendar right now. Know about another? Add it below."
+              : "No upcoming decisions logged yet. Know about one? Add it below."}
           </p>
         ) : (
           <ul className="divide-y divide-line border-t border-line">
-            {rows.map((e) => {
+            {listRows.map((e) => {
               const target = eventTarget(e);
               const badge = sourceBadge(e);
               const jz = e.jurisdiction;
