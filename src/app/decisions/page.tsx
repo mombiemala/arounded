@@ -20,9 +20,13 @@ type Row = Omit<CivicEvent, "jurisdiction"> & {
   jurisdiction: { name: string | null; state: string | null; timezone: string | null } | null;
 };
 
-// The decision we want front-and-center right now. Falls back to the soonest
-// confirmed event if this specific source_id isn't present.
-const FEATURED_SOURCE_ID = "loudoun-dc-moratorium-final-2026-10-20";
+// Header label for the featured card, matched to what kind of decision it is.
+function featuredLabel(eventType: string): string {
+  if (eventType === "vote") return "Next big vote";
+  if (eventType === "hearing") return "Next public hearing";
+  if (eventType === "comment_deadline") return "Next comment deadline";
+  return "Coming up";
+}
 
 function sourceBadge(e: Row): { label: string; cls: string } {
   if (e.source === "sample") return { label: "Example", cls: "text-ink-faint border-line" };
@@ -53,12 +57,8 @@ export default async function DecisionsPage() {
       return new Date(ta).getTime() - new Date(tb).getTime();
     });
 
-  // Pick the event to feature: the moratorium final vote if present, otherwise
-  // the soonest confirmed decision (rows are already sorted soonest-first).
-  const featured =
-    rows.find((e) => e.source_id === FEATURED_SOURCE_ID) ??
-    rows.find((e) => e.confirmed) ??
-    null;
+  // Feature the soonest confirmed decision (rows are already sorted soonest-first).
+  const featured = rows.find((e) => e.confirmed) ?? null;
   const listRows = featured ? rows.filter((e) => e.id !== featured.id) : rows;
 
   return (
@@ -89,7 +89,7 @@ export default async function DecisionsPage() {
             <div className="mb-12 rounded-xl border-2 border-ink overflow-hidden">
               <div className="bg-ink text-ground px-5 sm:px-7 py-2.5 flex items-center justify-between gap-3">
                 <span className="font-mono text-[11px] uppercase tracking-[0.14em] font-bold text-flame">
-                  ★ Next big vote
+                  ★ {featuredLabel(featured.event_type)}
                 </span>
                 {countdown && (
                   <span className="font-mono text-[11px] uppercase tracking-[0.14em] font-bold">
