@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { cronUnauthorized } from "@/lib/cronAuth";
 
 export const dynamic = "force-dynamic";
 
@@ -18,7 +19,9 @@ const HMS_SMOKE_GEOJSON_URL =
   "&returnGeometry=true" +
   "&f=geojson";
 
-export async function GET() {
+export async function GET(request: Request) {
+  const denied = cronUnauthorized(request);
+  if (denied) return denied;
   try {
     const res = await fetch(HMS_SMOKE_GEOJSON_URL, { cache: "no-store" });
     if (!res.ok) throw new Error("Failed to fetch NOAA HMS smoke GeoJSON");

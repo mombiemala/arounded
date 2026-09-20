@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { makeUnsubToken } from "@/lib/alertToken";
+import { cronUnauthorized } from "@/lib/cronAuth";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
@@ -111,6 +112,9 @@ function digestHtml(
 }
 
 export async function GET(request: Request) {
+  const denied = cronUnauthorized(request);
+  if (denied) return denied;
+
   const apiKey = process.env.RESEND_API_KEY;
   if (!apiKey) {
     return NextResponse.json({ ok: true, skipped: "RESEND_API_KEY not set" });

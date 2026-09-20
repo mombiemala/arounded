@@ -3,6 +3,7 @@ import { createClient } from "@supabase/supabase-js";
 import { parseICal } from "@/lib/ingest/ical";
 import { parseRss, bodyOf, parseTitleDate, easternYMD, sameYMD, extractDcItems } from "@/lib/ingest/granicus";
 import { SOURCES, isRelevantMeeting, buildCandidate, matchDataCenter, type Candidate } from "@/lib/ingest/sources";
+import { cronUnauthorized } from "@/lib/cronAuth";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
@@ -39,18 +40,11 @@ function htmlToText(html: string): string {
 }
 
 export async function GET(request: Request) {
+  const denied = cronUnauthorized(request);
+  if (denied) return denied;
+
   const { searchParams } = new URL(request.url);
   const dryRun = searchParams.get("dry") === "1";
-
-  // Optional shared-secret guard (matches Vercel cron's Authorization header if set).
-  const secret = process.env.CRON_SECRET;
-  if (secret) {
-    const auth = request.headers.get("authorization");
-    const key = searchParams.get("key");
-    if (auth !== `Bearer ${secret}` && key !== secret) {
-      return NextResponse.json({ ok: false, error: "unauthorized" }, { status: 401 });
-    }
-  }
 
   const admin = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,

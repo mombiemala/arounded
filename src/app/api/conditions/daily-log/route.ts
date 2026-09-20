@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import booleanPointInPolygon from "@turf/boolean-point-in-polygon";
 import { point } from "@turf/helpers";
+import { cronUnauthorized } from "@/lib/cronAuth";
 
 export const dynamic = "force-dynamic";
 
@@ -77,7 +78,9 @@ async function getSmokePresent(lat: number, lng: number): Promise<boolean | null
   }
 }
 
-export async function GET() {
+export async function GET(request: Request) {
+  const denied = cronUnauthorized(request);
+  if (denied) return denied;
   try {
     const supabase = getSupabase();
     const { data: places, error } = await supabase

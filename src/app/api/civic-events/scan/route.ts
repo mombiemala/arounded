@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { cronUnauthorized } from "@/lib/cronAuth";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
@@ -9,7 +10,10 @@ export const maxDuration = 60;
 //   'deadline' when a comment window closes within 2 days.
 // All matching + dedupe lives in the run_decision_scan() SQL function; the
 // email digest cron then delivers the resulting notifications.
-export async function GET() {
+export async function GET(request: Request) {
+  const denied = cronUnauthorized(request);
+  if (denied) return denied;
+
   const admin = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!
