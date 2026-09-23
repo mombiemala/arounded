@@ -6,6 +6,8 @@ import { useRouter, useSearchParams } from "next/navigation";
 import Navigation from "@/src/components/Navigation";
 import Footer from "@/src/components/Footer";
 import { supabase } from "@/lib/supabaseClient";
+import { createBrowserClient } from "@/lib/supabaseBrowser";
+import { useAuth } from "@/lib/useAuth";
 import {
   geocodeForward,
   fetchAirQuality,
@@ -111,19 +113,53 @@ function Search({ onSelect }: { onSelect: (p: PlaceHit) => void }) {
 function NearInner() {
   const router = useRouter();
   const params = useSearchParams();
+  const { user } = useAuth();
   const [place, setPlace] = useState<PlaceHit | null>(() => decodePlace(params.get("a")));
   const [dc, setDc] = useState<DCounts | null>(null);
   const [air, setAir] = useState<Air | null>(null);
   const [events, setEvents] = useState<CivicEvent[]>([]);
   const [loadedKey, setLoadedKey] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
+  const [saveErr, setSaveErr] = useState<string | null>(null);
 
   const placeKey = place ? `${place.center[0]},${place.center[1]}` : null;
   const loading = placeKey != null && loadedKey !== placeKey;
 
   const select = (p: PlaceHit) => {
     setPlace(p);
+    setSaved(false);
+    setSaveErr(null);
     router.replace(`/near?a=${encodePlace(p)}`, { scroll: false });
+  };
+
+  const savePlace = async () => {
+    if (!user || !place) return;
+    setSaving(true);
+    setSaveErr(null);
+    try {
+      const client = createBrowserClient();
+      const label = (place.place_name.split(",")[0] || place.place_name).slice(0, 60);
+      const { error } = await client.from("saved_places").upsert(
+        {
+          user_id: user.id,
+          label,
+          name: place.place_name,
+          lat: place.center[1],
+          lng: place.center[0],
+        },
+        { onConflict: "user_id,label" }
+      );
+      if (error) throw error;
+      setSaved(true);
+      // Best-effort: populate condition history right away.
+      fetch("/api/conditions/daily-log").catch(() => {});
+    } catch (e) {
+      setSaveErr(e instanceof Error ? e.message : "Couldn’t save. Try again.");
+    } finally {
+      setSaving(false);
+    }
   };
 
   useEffect(() => {
@@ -263,10 +299,33 @@ function NearInner() {
                     <Link href={`/map?lat=${place.center[1]}&lng=${place.center[0]}`} className="px-4 py-2 rounded-lg bg-brand text-brand-ink text-sm font-medium hover:bg-brand-strong transition-colors">
                       Explore on the map
                     </Link>
-                    <button onClick={() => { setPlace(null); router.replace("/near", { scroll: false }); }} className="px-4 py-2 rounded-lg border border-line text-sm hover:border-line transition-colors">
+                    {user ? (
+                      saved ? (
+                        <span className="px-4 py-2 rounded-lg border-2 border-brand/50 text-brand text-sm font-medium">
+                          Saved ✓ — we&apos;ll flag changes nearby
+                        </span>
+                      ) : (
+                        <button
+                          onClick={savePlace}
+                          disabled={saving}
+                          className="px-4 py-2 rounded-lg border-2 border-ink text-sm font-medium hover:bg-hover transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          {saving ? "Saving…" : "Save & get alerts"}
+                        </button>
+                      )
+                    ) : (
+                      <Link
+                        href={`/login?next=${encodeURIComponent(`/near?a=${encodePlace(place)}`)}`}
+                        className="px-4 py-2 rounded-lg border-2 border-ink text-sm font-medium hover:bg-hover transition-colors"
+                      >
+                        Sign in to save &amp; get alerts
+                      </Link>
+                    )}
+                    <button onClick={() => { setPlace(null); setSaved(false); setSaveErr(null); router.replace("/near", { scroll: false }); }} className="px-4 py-2 rounded-lg border border-line text-sm hover:border-line transition-colors">
                       Check another address
                     </button>
                   </div>
+                  {saveErr && <p className="text-xs text-red-400 mt-2">{saveErr}</p>}
                 </div>
               </div>
             )}

@@ -17,6 +17,16 @@ export default function LoginPage() {
 
   const supabase = createBrowserClient();
 
+  // Preserve an internal ?next=… path through the auth round-trip so we can
+  // return the user where they started (e.g. /near to save a place).
+  const authCallbackUrl = () => {
+    const base = `${window.location.origin}/auth/callback`;
+    const next = new URLSearchParams(window.location.search).get("next");
+    return next && next.startsWith("/") && !next.startsWith("//")
+      ? `${base}?next=${encodeURIComponent(next)}`
+      : base;
+  };
+
   const handleEmailLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -26,7 +36,7 @@ export default function LoginPage() {
       const { error } = await supabase.auth.signInWithOtp({
         email,
         options: {
-          emailRedirectTo: `${window.location.origin}/auth/callback`,
+          emailRedirectTo: authCallbackUrl(),
         },
       });
 
@@ -58,7 +68,7 @@ export default function LoginPage() {
       const { error } = await supabase.auth.signInWithOAuth({
         provider: "google",
         options: {
-          redirectTo: `${window.location.origin}/auth/callback`,
+          redirectTo: authCallbackUrl(),
         },
       });
 

@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { parseICal } from "@/lib/ingest/ical";
-import { parseRss, bodyOf, parseTitleDate, easternYMD, sameYMD, extractDcItems } from "@/lib/ingest/granicus";
+import { parseRss, bodyOf, parseTitleDate, easternYMD, sameYMD, extractDcItems, type YMD } from "@/lib/ingest/granicus";
 import { SOURCES, isRelevantMeeting, buildCandidate, matchDataCenter, type Candidate } from "@/lib/ingest/sources";
 import { cronUnauthorized } from "@/lib/cronAuth";
 
@@ -135,6 +135,75 @@ export async function GET(request: Request) {
       report.push(entry);
     }
 
+    // Granicus-primary staging: for counties with no iCal feed (e.g. Prince
+    // William), pull upcoming public hearings straight from the agenda RSS.
+    // Only stage hearings whose agenda actually mentions a data center, so a
+    // mis-targeted view stages nothing rather than noise.
+    if (!dryRun && src.granicus && src.granicusPrimary) {
+      const dayKey = (d: YMD) => d.y * 372 + d.m * 31 + d.d; // monotonic, compare-only
+      const lo = easternYMD(new Date(now).toISOString());
+      const hi = easternYMD(new Date(horizon).toISOString());
+      const loKey = lo ? dayKey(lo) : 0;
+      const hiKey = hi ? dayKey(hi) : Number.MAX_SAFE_INTEGER;
+
+      const views = [...new Set([src.granicus.currentViewId, ...src.granicus.viewIds])];
+      const seen = new Set<string>();
+      const rows: Record<string, unknown>[] = [];
+      let scanned = 0;
+      for (const v of views) {
+        if (scanned >= MAX_ENRICH) break;
+        const r = await fetchText(`${src.granicus.base}/ViewPublisherRSS.php?view_id=${v}&mode=agendas`, 9000);
+        for (const it of r.text ? parseRss(r.text) : []) {
+          if (scanned >= MAX_ENRICH) break;
+          const body = bodyOf(it.title);
+          const date = parseTitleDate(it.title);
+          if (!it.link || !body || !date || !/public hearing/i.test(it.title)) continue;
+          const k = dayKey(date);
+          if (k < loKey || k > hiKey) continue; // upcoming, within the horizon
+          if (seen.has(it.link)) continue;
+          seen.add(it.link);
+          scanned++;
+          const a = await fetchText(it.link, 8000);
+          const dcItems = a.text ? extractDcItems(htmlToText(a.text)) : [];
+          if (!dcItems.length) continue; // only data-center-relevant hearings
+          const idm = /(?:event_id|clip_id)=(\d+)/i.exec(it.link);
+          const stableKey = idm
+            ? idm[1]
+            : Math.abs([...it.link].reduce((h, c) => ((h << 5) - h + c.charCodeAt(0)) | 0, 0)).toString(36);
+          const label = body === "pc" ? "Prince William Planning Commission" : "Prince William Board of County Supervisors";
+          const codes = dcItems.filter((x) => /^[A-Z]{3,4}-\d{4}/.test(x)).slice(0, 3);
+          rows.push({
+            title: (codes.length
+              ? `${label} — data-center hearing (${codes.join(", ")})`
+              : `${label} — data-center public hearing`).slice(0, 200),
+            event_type: "hearing",
+            status: "pending_review",
+            confirmed: false,
+            starts_at: new Date(Date.UTC(date.y, date.m, date.d, 23, 0, 0)).toISOString(), // ~7pm ET
+            lat: src.defaultLat,
+            lng: src.defaultLng,
+            description: `On the agenda: ${dcItems.join("; ")}. Auto-detected from the county agenda — verify the exact item and time, then confirm to publish.`.slice(0, 1000),
+            how_to_comment_url: src.howToCommentUrl,
+            source: `ingest:${src.slug}`,
+            source_url: it.link,
+            source_id: `${src.slug}:${stableKey}`.slice(0, 200),
+            jurisdiction_id: jurisdictionId,
+          });
+        }
+      }
+      let staged = 0;
+      let upsertError: string | undefined;
+      if (rows.length) {
+        const { error, count } = await admin
+          .from("civic_events")
+          .upsert(rows, { onConflict: "source,source_id", ignoreDuplicates: true, count: "exact" });
+        if (error) upsertError = error.message;
+        else staged = count ?? 0;
+      }
+      totalStaged += staged;
+      report.push({ source: src.slug, granicusPrimary: true, matched: rows.length, staged, upsertError });
+    }
+
     // v2 discovery: probe Granicus agenda feeds to find which view carries the
     // PC/BOS public-hearing agendas and what the agenda links look like.
     if (dryRun && src.granicus) {
@@ -182,46 +251,63 @@ export async function GET(request: Request) {
     // specific applications. Only touches not-yet-enriched pending_review rows,
     // so it's idempotent and never clobbers an admin edit.
     if (!dryRun && src.granicus) {
-      const feedUrl = `${src.granicus.base}/ViewPublisherRSS.php?view_id=${src.granicus.currentViewId}&mode=agendas`;
-      const r = await fetchText(feedUrl, 9000);
-      const items = (r.text ? parseRss(r.text) : [])
-        .map((it) => ({
-          link: it.link,
-          body: bodyOf(it.title),
-          date: parseTitleDate(it.title),
-          ph: /public hearing/i.test(it.title),
-        }))
-        .filter((it) => it.link && it.body && it.date && it.ph);
+      // Gather public-hearing agenda items across ALL configured views and dedup
+      // by link. Upcoming agendas live in an event-based view (event_id links),
+      // not the "past meetings" view, so scanning only one view misses them.
+      type AgItem = { link: string; body: "pc" | "bos"; date: YMD };
+      const views = [...new Set([src.granicus.currentViewId, ...src.granicus.viewIds])];
+      const seen = new Set<string>();
+      const items: AgItem[] = [];
+      for (const v of views) {
+        const feedUrl = `${src.granicus.base}/ViewPublisherRSS.php?view_id=${v}&mode=agendas`;
+        const r = await fetchText(feedUrl, 9000);
+        for (const it of r.text ? parseRss(r.text) : []) {
+          const body = bodyOf(it.title);
+          const date = parseTitleDate(it.title);
+          if (!it.link || !body || !date || !/public hearing/i.test(it.title)) continue;
+          if (seen.has(it.link)) continue;
+          seen.add(it.link);
+          items.push({ link: it.link, body, date });
+        }
+      }
+
+      // Enrich ingest-sourced hearings that haven't been matched to a specific
+      // agenda yet — whether still in review or already published with a generic
+      // title. source='ingest:*' keeps this away from hand-authored admin rows.
       const { data: cands } = await admin
         .from("civic_events")
-        .select("id,title,starts_at,source_url")
+        .select("id,title,starts_at,source_url,status")
         .eq("source", `ingest:${src.slug}`)
-        .eq("status", "pending_review")
+        .in("status", ["pending_review", "scheduled"])
         .gte("starts_at", new Date().toISOString());
       let enriched = 0;
-      for (const c of (cands ?? []) as { id: string; title: string; starts_at: string; source_url: string | null }[]) {
+      for (const c of (cands ?? []) as { id: string; title: string; starts_at: string; source_url: string | null; status: string }[]) {
         if (c.source_url && /AgendaViewer/i.test(c.source_url)) continue; // already enriched
         const cb = bodyOf(c.title);
         const cd = easternYMD(c.starts_at);
         if (!cb || !cd) continue;
         const match = items.find((it) => it.body === cb && sameYMD(it.date, cd));
-        if (!match || !match.link) continue;
+        if (!match) continue;
         const a = await fetchText(match.link, 8000);
         const dcItems = a.text ? extractDcItems(htmlToText(a.text)) : [];
         if (!dcItems.length) continue;
-        const label = cb === "pc" ? "Planning Commission" : "Board of Supervisors";
+        const label = cb === "pc" ? "Loudoun Planning Commission" : "Loudoun Board of Supervisors";
+        const codes = dcItems.filter((x) => /^[A-Z]{3,4}-\d{4}/.test(x)).slice(0, 3);
+        const title = codes.length
+          ? `${label} — data-center hearing (${codes.join(", ")})`
+          : `${label} — data-center public hearing`;
         await admin
           .from("civic_events")
           .update({
-            title: `${label} public hearing — data-center item${dcItems.length > 1 ? "s" : ""}`.slice(0, 200),
-            description: `Agenda includes data-center matter(s): ${dcItems.join("; ")}. Auto-detected from the county agenda — verify and confirm to publish.`.slice(0, 1000),
+            title: title.slice(0, 200),
+            description: `On the agenda: ${dcItems.join("; ")}. Auto-detected from the county agenda${c.status === "pending_review" ? " — verify and confirm to publish" : "; confirm the exact item and time on the county calendar"}.`.slice(0, 1000),
             source_url: match.link,
             updated_at: new Date().toISOString(),
           })
           .eq("id", c.id);
         enriched++;
       }
-      report.push({ source: src.slug, enrichedFromAgenda: enriched });
+      report.push({ source: src.slug, agendaItems: items.length, enrichedFromAgenda: enriched });
     }
   }
 

@@ -16,6 +16,9 @@ export type IngestSource = {
   // Optional Granicus agenda source for v2 enrichment (scan agendas for
   // data-center items and attach them to the matching hearing candidate).
   granicus?: { base: string; currentViewId: string; viewIds: string[] };
+  // When a county has no iCal calendar feed, stage upcoming public hearings
+  // straight from the Granicus agenda RSS instead of from iCal.
+  granicusPrimary?: boolean;
 };
 
 function envList(name: string, fallback: string[]): string[] {
@@ -46,6 +49,28 @@ export const SOURCES: IngestSource[] = [
       // view 90 is the current "all meetings" agenda feed (verified live).
       currentViewId: process.env.INGEST_LOUDOUN_GRANICUS_CURRENT || "90",
       viewIds: envList("INGEST_LOUDOUN_GRANICUS_VIEWS", ["90", "88", "77", "86", "89"]),
+    },
+  },
+  {
+    slug: "pwc",
+    name: "Prince William County",
+    jurisdictionName: "Prince William County",
+    jurisdictionState: "VA",
+    // McCoart Administration Building (Board Chambers), 1 County Complex Ct.
+    defaultLat: 38.6607,
+    defaultLng: -77.3364,
+    howToCommentUrl: "https://www.pwcva.gov/department/board-county-supervisors",
+    calendarUrl: "https://pwcgov.granicus.com/ViewPublisher.php?view_id=12",
+    // Prince William publishes no iCal calendar feed, so we stage straight from
+    // the Granicus agenda RSS. view 12 is the Planning "External View" agenda
+    // feed (verified via search); the exact BCS view is confirmed by the
+    // dry-run probe and can be retargeted via env without a deploy.
+    icalFeeds: envList("INGEST_PWC_ICAL", []),
+    granicusPrimary: true,
+    granicus: {
+      base: process.env.INGEST_PWC_GRANICUS_BASE || "https://pwcgov.granicus.com",
+      currentViewId: process.env.INGEST_PWC_GRANICUS_CURRENT || "12",
+      viewIds: envList("INGEST_PWC_GRANICUS_VIEWS", ["12", "23", "2", "4", "6", "8", "10", "14"]),
     },
   },
 ];

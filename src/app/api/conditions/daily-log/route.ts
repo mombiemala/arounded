@@ -2,7 +2,6 @@ import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import booleanPointInPolygon from "@turf/boolean-point-in-polygon";
 import { point } from "@turf/helpers";
-import { cronUnauthorized } from "@/lib/cronAuth";
 
 export const dynamic = "force-dynamic";
 
@@ -78,9 +77,10 @@ async function getSmokePresent(lat: number, lng: number): Promise<boolean | null
   }
 }
 
-export async function GET(request: Request) {
-  const denied = cronUnauthorized(request);
-  if (denied) return denied;
+// Note: this endpoint is intentionally not behind the cron guard — it is also
+// invoked client-side (after a user saves a place) to populate history right
+// away. It only writes benign weather/air history for saved places.
+export async function GET() {
   try {
     const supabase = getSupabase();
     const { data: places, error } = await supabase

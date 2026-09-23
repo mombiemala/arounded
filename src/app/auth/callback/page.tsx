@@ -35,6 +35,15 @@ function AuthCallbackContent() {
       }
     };
 
+    // Where to land after a successful sign-in. Honor an internal ?next=… path
+    // (e.g. returning to /near to save a place); default to the map. Only same-
+    // origin relative paths are allowed, to avoid an open redirect.
+    const nextParam = params.get("next");
+    const dest =
+      nextParam && nextParam.startsWith("/") && !nextParam.startsWith("//")
+        ? nextParam
+        : "/map";
+
     const run = async () => {
       // The provider bounced back with an explicit error (e.g. access denied).
       if (params.get("error") || params.get("error_description")) {
@@ -46,7 +55,7 @@ function AuthCallbackContent() {
       const code = params.get("code");
       if (code) {
         const { error } = await supabase.auth.exchangeCodeForSession(code);
-        finish(error ? "/login?error=auth_failed" : "/map");
+        finish(error ? "/login?error=auth_failed" : dest);
         return;
       }
 
@@ -55,7 +64,7 @@ function AuthCallbackContent() {
       for (let i = 0; i < 12; i++) {
         const { data } = await supabase.auth.getSession();
         if (data?.session) {
-          finish("/map");
+          finish(dest);
           return;
         }
         await new Promise((r) => setTimeout(r, 300));
