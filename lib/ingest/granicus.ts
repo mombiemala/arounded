@@ -44,10 +44,12 @@ export function parseRss(xml: string): RssItem[] {
 
 export type YMD = { y: number; m: number; d: number };
 
-// Which body a meeting/candidate title refers to.
+// Which body a meeting/candidate title refers to. Tolerates spelling/naming
+// variants across counties (e.g. Prince William writes "Planning Commision"
+// and "Board of County Supervisors").
 export function bodyOf(title: string): "pc" | "bos" | null {
-  if (/planning commission/i.test(title)) return "pc";
-  if (/board of supervisors/i.test(title)) return "bos";
+  if (/planning\s+commiss?ion/i.test(title)) return "pc";
+  if (/board of (?:county )?supervisors/i.test(title)) return "bos";
   return null;
 }
 

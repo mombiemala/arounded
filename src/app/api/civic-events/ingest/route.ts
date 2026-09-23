@@ -157,7 +157,10 @@ export async function GET(request: Request) {
           if (scanned >= MAX_ENRICH) break;
           const body = bodyOf(it.title);
           const date = parseTitleDate(it.title);
-          if (!it.link || !body || !date || !/public hearing/i.test(it.title)) continue;
+          // No "public hearing" title filter here: granicus-primary counties
+          // (e.g. Prince William) fold hearings into regular PC/BCS meetings.
+          // The data-center agenda scan below is what gates relevance.
+          if (!it.link || !body || !date) continue;
           const k = dayKey(date);
           if (k < loKey || k > hiKey) continue; // upcoming, within the horizon
           if (seen.has(it.link)) continue;
@@ -204,9 +207,44 @@ export async function GET(request: Request) {
       report.push({ source: src.slug, granicusPrimary: true, matched: rows.length, staged, upsertError });
     }
 
+    // Granicus-primary probe: for a county we stage straight from agendas,
+    // scan a wider sample across its working views to confirm whether data-
+    // center matters are machine-readable — i.e. whether the phrase "data
+    // center" appears in the agenda text, and what case codes look like.
+    if (dryRun && src.granicusPrimary && src.granicus) {
+      const codeRe = /\b[A-Z]{2,5}[- ]?\d{4}[- ]?\d{1,6}\b/g;
+      const views = [...new Set([src.granicus.currentViewId, ...src.granicus.viewIds])];
+      const seenLinks = new Set<string>();
+      const probe: Record<string, unknown>[] = [];
+      let scanned = 0;
+      for (const v of views) {
+        if (scanned >= 12) break;
+        const r = await fetchText(`${src.granicus.base}/ViewPublisherRSS.php?view_id=${v}&mode=agendas`, 9000);
+        for (const it of (r.text ? parseRss(r.text) : []).slice(0, 6)) {
+          if (scanned >= 12 || !it.link || seenLinks.has(it.link)) continue;
+          seenLinks.add(it.link);
+          scanned++;
+          const a = await fetchText(it.link, 8000);
+          const txt = a.text ? htmlToText(a.text) : "";
+          const dc = /data\s?cent(?:er|re)/i.exec(txt);
+          probe.push({
+            view_id: v,
+            title: it.title,
+            body: bodyOf(it.title),
+            date: parseTitleDate(it.title),
+            len: txt.length,
+            dcMention: !!dc,
+            dcSnippet: dc ? txt.slice(Math.max(0, dc.index - 60), dc.index + 100) : "",
+            codes: [...new Set([...txt.matchAll(codeRe)].map((m) => m[0]))].slice(0, 12),
+          });
+        }
+      }
+      report.push({ source: src.slug, granicusPrimaryProbe: probe });
+    }
+
     // v2 discovery: probe Granicus agenda feeds to find which view carries the
     // PC/BOS public-hearing agendas and what the agenda links look like.
-    if (dryRun && src.granicus) {
+    if (dryRun && src.granicus && !src.granicusPrimary) {
       const g: Record<string, unknown>[] = [];
       let primaryItems: { title: string; link: string | null }[] = [];
       for (const v of src.granicus.viewIds) {
