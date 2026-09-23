@@ -135,6 +135,75 @@ export async function GET(request: Request) {
       report.push(entry);
     }
 
+    // Granicus-primary staging: for counties with no iCal feed (e.g. Prince
+    // William), pull upcoming public hearings straight from the agenda RSS.
+    // Only stage hearings whose agenda actually mentions a data center, so a
+    // mis-targeted view stages nothing rather than noise.
+    if (!dryRun && src.granicus && src.granicusPrimary) {
+      const dayKey = (d: YMD) => d.y * 372 + d.m * 31 + d.d; // monotonic, compare-only
+      const lo = easternYMD(new Date(now).toISOString());
+      const hi = easternYMD(new Date(horizon).toISOString());
+      const loKey = lo ? dayKey(lo) : 0;
+      const hiKey = hi ? dayKey(hi) : Number.MAX_SAFE_INTEGER;
+
+      const views = [...new Set([src.granicus.currentViewId, ...src.granicus.viewIds])];
+      const seen = new Set<string>();
+      const rows: Record<string, unknown>[] = [];
+      let scanned = 0;
+      for (const v of views) {
+        if (scanned >= MAX_ENRICH) break;
+        const r = await fetchText(`${src.granicus.base}/ViewPublisherRSS.php?view_id=${v}&mode=agendas`, 9000);
+        for (const it of r.text ? parseRss(r.text) : []) {
+          if (scanned >= MAX_ENRICH) break;
+          const body = bodyOf(it.title);
+          const date = parseTitleDate(it.title);
+          if (!it.link || !body || !date || !/public hearing/i.test(it.title)) continue;
+          const k = dayKey(date);
+          if (k < loKey || k > hiKey) continue; // upcoming, within the horizon
+          if (seen.has(it.link)) continue;
+          seen.add(it.link);
+          scanned++;
+          const a = await fetchText(it.link, 8000);
+          const dcItems = a.text ? extractDcItems(htmlToText(a.text)) : [];
+          if (!dcItems.length) continue; // only data-center-relevant hearings
+          const idm = /(?:event_id|clip_id)=(\d+)/i.exec(it.link);
+          const stableKey = idm
+            ? idm[1]
+            : Math.abs([...it.link].reduce((h, c) => ((h << 5) - h + c.charCodeAt(0)) | 0, 0)).toString(36);
+          const label = body === "pc" ? "Prince William Planning Commission" : "Prince William Board of County Supervisors";
+          const codes = dcItems.filter((x) => /^[A-Z]{3,4}-\d{4}/.test(x)).slice(0, 3);
+          rows.push({
+            title: (codes.length
+              ? `${label} — data-center hearing (${codes.join(", ")})`
+              : `${label} — data-center public hearing`).slice(0, 200),
+            event_type: "hearing",
+            status: "pending_review",
+            confirmed: false,
+            starts_at: new Date(Date.UTC(date.y, date.m, date.d, 23, 0, 0)).toISOString(), // ~7pm ET
+            lat: src.defaultLat,
+            lng: src.defaultLng,
+            description: `On the agenda: ${dcItems.join("; ")}. Auto-detected from the county agenda — verify the exact item and time, then confirm to publish.`.slice(0, 1000),
+            how_to_comment_url: src.howToCommentUrl,
+            source: `ingest:${src.slug}`,
+            source_url: it.link,
+            source_id: `${src.slug}:${stableKey}`.slice(0, 200),
+            jurisdiction_id: jurisdictionId,
+          });
+        }
+      }
+      let staged = 0;
+      let upsertError: string | undefined;
+      if (rows.length) {
+        const { error, count } = await admin
+          .from("civic_events")
+          .upsert(rows, { onConflict: "source,source_id", ignoreDuplicates: true, count: "exact" });
+        if (error) upsertError = error.message;
+        else staged = count ?? 0;
+      }
+      totalStaged += staged;
+      report.push({ source: src.slug, granicusPrimary: true, matched: rows.length, staged, upsertError });
+    }
+
     // v2 discovery: probe Granicus agenda feeds to find which view carries the
     // PC/BOS public-hearing agendas and what the agenda links look like.
     if (dryRun && src.granicus) {
