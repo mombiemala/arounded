@@ -174,7 +174,7 @@ export async function GET(request: Request) {
             ? idm[1]
             : Math.abs([...it.link].reduce((h, c) => ((h << 5) - h + c.charCodeAt(0)) | 0, 0)).toString(36);
           const label = body === "pc" ? "Prince William Planning Commission" : "Prince William Board of County Supervisors";
-          const codes = dcItems.filter((x) => /^[A-Z]{3,4}-\d{4}/.test(x)).slice(0, 3);
+          const codes = dcItems.filter((x) => /^[A-Z]{2,5}[-\s]?\d{4}/.test(x)).slice(0, 3);
           rows.push({
             title: (codes.length
               ? `${label} — data-center hearing (${codes.join(", ")})`
@@ -330,7 +330,7 @@ export async function GET(request: Request) {
         const dcItems = a.text ? extractDcItems(htmlToText(a.text)) : [];
         if (!dcItems.length) continue;
         const label = cb === "pc" ? "Loudoun Planning Commission" : "Loudoun Board of Supervisors";
-        const codes = dcItems.filter((x) => /^[A-Z]{3,4}-\d{4}/.test(x)).slice(0, 3);
+        const codes = dcItems.filter((x) => /^[A-Z]{2,5}[-\s]?\d{4}/.test(x)).slice(0, 3);
         const title = codes.length
           ? `${label} — data-center hearing (${codes.join(", ")})`
           : `${label} — data-center public hearing`;
