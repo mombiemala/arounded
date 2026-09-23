@@ -69,8 +69,12 @@ export const SOURCES: IngestSource[] = [
     granicusPrimary: true,
     granicus: {
       base: process.env.INGEST_PWC_GRANICUS_BASE || "https://pwcgov.granicus.com",
-      currentViewId: process.env.INGEST_PWC_GRANICUS_CURRENT || "12",
-      viewIds: envList("INGEST_PWC_GRANICUS_VIEWS", ["12", "23", "2", "4", "6", "8", "10", "14"]),
+      // view 23 = Board of County Supervisors agendas, where PWC's data-center
+      // matters (rezonings, special-use permits, DC-overlay ordinances) are
+      // machine-readable. view 12 (Planning Commission) carries no readable DC
+      // signal, so BCS is scanned first; scanned agendas are capped per run.
+      currentViewId: process.env.INGEST_PWC_GRANICUS_CURRENT || "23",
+      viewIds: envList("INGEST_PWC_GRANICUS_VIEWS", ["23", "12"]),
     },
   },
 ];

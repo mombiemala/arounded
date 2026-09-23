@@ -95,8 +95,11 @@ export function sameYMD(a: YMD | null, b: YMD | null): boolean {
 export function extractDcItems(text: string): string[] {
   if (!/data\s?cent(?:er|re)/i.test(text)) return [];
   const items = new Set<string>();
-  const codeRe = /\b(?:SPEX|ZMAP|ZCPA|ZOAM|ZRTD|ZRTS|ZCPD|CMPT|SPMI|LEGI)-\d{4}-\d{2,4}/gi;
-  for (const m of text.matchAll(codeRe)) items.add(m[0].toUpperCase());
+  // Loudoun uses PREFIX-YYYY-NNNN; Prince William uses PREFIX YYYY-NNNNN (with
+  // an optional space, e.g. "DPA 2026-00006", "SUP2026-00021"). Match both.
+  const codeRe =
+    /\b(?:SPEX|ZMAP|ZCPA|ZOAM|ZRTD|ZRTS|ZCPD|CMPT|SPMI|LEGI|REZ|SUP|CPA|DPA|CPTA|ZTA|SPR|MOD|PLN)[-\s]?\d{4}-\d{2,5}\b/gi;
+  for (const m of text.matchAll(codeRe)) items.add(m[0].toUpperCase().replace(/\s+/g, " ").trim());
   const dcRe = /([A-Za-z0-9][\w .,'&/-]{0,60}?data\s?cent(?:er|re)s?[\w .,'&/-]{0,30})/gi;
   for (const m of text.matchAll(dcRe)) {
     const s = m[1].replace(/\s+/g, " ").trim();
