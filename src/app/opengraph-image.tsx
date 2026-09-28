@@ -44,7 +44,7 @@ export default function Image() {
         </div>
 
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-          <div style={{ fontSize: "26px", color: "#8a8175" }}>arounded.kamalacreated.com</div>
+          <div style={{ fontSize: "26px", color: "#8a8175" }}>arounded.heykamala.com</div>
           <div style={{ display: "flex", gap: "12px" }}>
             {["#ecab3f", "#cf7d4a", "#b7a582", "#a3b579"].map((c) => (
               <div key={c} style={{ width: "18px", height: "18px", borderRadius: "999px", background: c, display: "flex" }} />

@@ -207,7 +207,7 @@ export default function PrivacyPage() {
             </p>
             <p className="text-xs opacity-55">
               (Tip: you can also change this to a domain email you actually control, like
-              privacy@kamalacreated.com, if that&apos;s easier right now.)
+              privacy@heykamala.com, if that&apos;s easier right now.)
             </p>
           </div>
         </section>
