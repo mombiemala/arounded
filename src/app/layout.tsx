@@ -24,7 +24,7 @@ const mono = JetBrains_Mono({
   display: "swap",
 });
 
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://arounded.kamalacreated.com";
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://arounded.heykamala.com";
 const DESCRIPTION =
   "A free, transparent map of what surrounds the places you care about — data centers, facilities, power, air quality and wildfire smoke — and the local decisions that change them.";
 

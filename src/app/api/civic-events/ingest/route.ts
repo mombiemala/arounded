@@ -17,7 +17,7 @@ async function fetchText(url: string, ms: number): Promise<{ text: string | null
   try {
     const res = await fetch(url, {
       signal: ctrl.signal,
-      headers: { "User-Agent": "AroundedIngest/1.0 (+https://arounded.kamalacreated.com)" },
+      headers: { "User-Agent": "AroundedIngest/1.0 (+https://arounded.heykamala.com)" },
       redirect: "follow",
     });
     const text = res.ok ? await res.text() : null;
