@@ -1,18 +1,75 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import Navigation from "@/src/components/Navigation";
 import Footer from "@/src/components/Footer";
 import { geocodeForward } from "@/lib/conditions";
+import { supabase } from "@/lib/supabaseClient";
+import { eventTarget, daysUntil, countdownLabel } from "@/lib/civicEvents";
 
 const WRAP = "max-w-6xl mx-auto px-6";
+const MONTHS = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
+
+type TeaserRow = {
+  id: string;
+  title: string;
+  starts_at: string | null;
+  comment_deadline: string | null;
+  jurisdiction: { name: string | null; state: string | null } | { name: string | null; state: string | null }[] | null;
+};
+
+type Teaser = { id: string; day: string; mon: string; title: string; meta: string; countdown: string };
+
+const TEASER_COLORS = ["var(--color-flame)", "var(--color-brand)", "var(--color-ink-faint)"];
 
 export default function Home() {
   const router = useRouter();
   const [addr, setAddr] = useState("");
   const [busy, setBusy] = useState(false);
+  const [upcoming, setUpcoming] = useState<Teaser[] | null>(null);
+
+  // Real upcoming decisions for the teaser panel, so the homepage never drifts
+  // from /decisions. Fails soft: on any error we simply render the CTA instead.
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const { data } = await supabase
+          .from("civic_events")
+          .select("id,title,starts_at,comment_deadline,jurisdiction:jurisdictions(name,state)")
+          .eq("confirmed", true)
+          .in("status", ["scheduled", "postponed"])
+          .limit(50);
+        if (cancelled) return;
+        const rows = ((data ?? []) as TeaserRow[])
+          .map((e) => ({ ...e, target: eventTarget(e) }))
+          .filter((e) => (daysUntil(e.target) ?? -1) >= 0)
+          .sort((a, b) => new Date(a.target ?? 0).getTime() - new Date(b.target ?? 0).getTime())
+          .slice(0, 3)
+          .map((e): Teaser => {
+            const jz = Array.isArray(e.jurisdiction) ? e.jurisdiction[0] : e.jurisdiction;
+            const d = e.target ? new Date(e.target) : null;
+            const place = jz ? [jz.name, jz.state].filter(Boolean).join(", ") : "";
+            return {
+              id: e.id,
+              day: d ? String(d.getUTCDate()) : "—",
+              mon: d ? MONTHS[d.getUTCMonth()] : "",
+              title: e.title,
+              meta: place,
+              countdown: countdownLabel(e.target),
+            };
+          });
+        setUpcoming(rows);
+      } catch {
+        if (!cancelled) setUpcoming([]);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const lookUp = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -69,19 +126,19 @@ export default function Home() {
         {/* bold data cards */}
         <div className="grid sm:grid-cols-3 gap-3 mt-9">
           <div className="rounded-md p-5" style={{ background: "var(--color-brand)", color: "var(--color-brand-ink)" }}>
-            <div className="font-display font-extrabold uppercase text-2xl leading-none">Moratorium vote</div>
-            <div className="font-mono text-[11px] tracking-wide mt-2 opacity-90">SEP 15 · IN 9 DAYS</div>
-            <div className="text-sm mt-2 opacity-95">The county-wide &quot;press pause&quot; on new data centers.</div>
+            <div className="font-display font-extrabold uppercase text-2xl leading-none">Proposed nearby</div>
+            <div className="font-mono text-[11px] tracking-wide mt-2 opacity-90">DATA CENTERS · POWER</div>
+            <div className="text-sm mt-2 opacity-95">See what&apos;s slated for your area — while it can still be stopped.</div>
           </div>
           <div className="rounded-md p-5 flamebtn">
-            <div className="font-display font-extrabold uppercase text-2xl leading-none">Quantum Park</div>
-            <div className="font-mono text-[11px] tracking-wide mt-2 opacity-80">OCT 20 · 2.4 MI</div>
-            <div className="text-sm mt-2">More servers proposed at the Verizon campus.</div>
+            <div className="font-display font-extrabold uppercase text-2xl leading-none">Before the vote</div>
+            <div className="font-mono text-[11px] tracking-wide mt-2 opacity-80">HEARINGS · DEADLINES</div>
+            <div className="text-sm mt-2">We flag decisions near you before the comment window closes.</div>
           </div>
           <div className="rounded-md p-5 bg-surface border-2 border-ink">
             <div className="font-display font-extrabold uppercase text-2xl leading-none">Your block</div>
-            <div className="font-mono text-[11px] tracking-wide mt-2 text-ink-faint">39.11, -77.56</div>
-            <div className="text-sm mt-2 text-ink-soft">3 proposed · 11 operating within 5 miles.</div>
+            <div className="font-mono text-[11px] tracking-wide mt-2 text-ink-faint">AIR · SMOKE · SITES</div>
+            <div className="text-sm mt-2 text-ink-soft">Look up an address — what&apos;s proposed and operating within 5 miles.</div>
           </div>
         </div>
         <p className="mt-5 text-sm text-ink-faint">Real facts around a place — every source named, not a black-box risk score.</p>
@@ -130,25 +187,36 @@ export default function Home() {
           </div>
           <div className="border-2 border-ink rounded-md overflow-hidden">
             <div className="flex items-center justify-between px-4 py-3 border-b-2 border-ink bg-ink" style={{ color: "var(--color-ground)" }}>
-              <span className="font-mono text-[11px] uppercase tracking-wide">Upcoming near your saved places</span>
-              <span className="font-mono text-[11px] uppercase tracking-wide opacity-70">Loudoun</span>
+              <span className="font-mono text-[11px] uppercase tracking-wide">Upcoming decisions</span>
+              <span className="font-mono text-[11px] uppercase tracking-wide opacity-70">Live</span>
             </div>
-            {[
-              { d: "15", m: "SEP", t: "Vote on a data-center moratorium", meta: "Board of Supervisors · county-wide “press pause”", c: "var(--color-flame)" },
-              { d: "20", m: "OCT", t: "Quantum Park data centers — Waxpool Rd", meta: "Board decides on more servers at the Verizon campus", c: "var(--color-brand)" },
-              { d: "22", m: "OCT", t: "Planning Commission public hearing", meta: "Agenda includes a special-exception application", c: "var(--color-ink-faint)" },
-            ].map((e, i) => (
-              <div key={i} className="flex gap-4 px-4 py-4 border-b border-line last:border-b-0">
-                <div className="font-display font-extrabold text-center w-12 shrink-0 leading-none" style={{ color: e.c }}>
-                  <div className="text-3xl">{e.d}</div>
-                  <div className="font-mono text-[10px] mt-1 tracking-wide">{e.m}</div>
-                </div>
-                <div>
-                  <div className="font-semibold leading-snug">{e.t}</div>
-                  <div className="text-sm text-ink-soft mt-0.5">{e.meta}</div>
-                </div>
+            {upcoming === null ? (
+              <div className="px-4 py-6 text-sm text-ink-soft">Loading upcoming decisions…</div>
+            ) : upcoming.length === 0 ? (
+              <div className="px-4 py-6 text-sm text-ink-soft">
+                No upcoming decisions logged right now.{" "}
+                <Link href="/decisions" className="text-brand hover:text-brand-strong">Browse decisions →</Link>
               </div>
-            ))}
+            ) : (
+              upcoming.map((e, i) => (
+                <Link
+                  key={e.id}
+                  href="/decisions"
+                  className="flex gap-4 px-4 py-4 border-b border-line last:border-b-0 hover:bg-hover transition-colors"
+                >
+                  <div className="font-display font-extrabold text-center w-12 shrink-0 leading-none" style={{ color: TEASER_COLORS[i] ?? "var(--color-ink-faint)" }}>
+                    <div className="text-3xl">{e.day}</div>
+                    <div className="font-mono text-[10px] mt-1 tracking-wide">{e.mon}</div>
+                  </div>
+                  <div className="min-w-0">
+                    <div className="font-semibold leading-snug">{e.title}</div>
+                    <div className="text-sm text-ink-soft mt-0.5">
+                      {e.meta}{e.meta && e.countdown ? " · " : ""}{e.countdown}
+                    </div>
+                  </div>
+                </Link>
+              ))
+            )}
           </div>
         </div>
       </section>
